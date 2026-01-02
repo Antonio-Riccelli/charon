@@ -1,0 +1,4524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Charon - Ferryman of the Dead</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --styx-deep: #0a0a12;
+            --styx-water: #1a1a2e;
+            --styx-mist: #2d2d44;
+            --gold-coin: #d4a853;
+            --gold-bright: #f0c674;
+            --gold-dark: #8b6914;
+            --soul-pale: #c8c8d4;
+            --soul-glow: rgba(200, 200, 212, 0.3);
+            --blood-red: #8b2942;
+            --success-green: #4a7c59;
+            --shore-brown: #2a2420;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--styx-deep);
+            color: var(--soul-pale);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ========== SHORE PHASE ========== */
+        #shore-phase {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 50% 100%, var(--styx-water) 0%, transparent 70%),
+                linear-gradient(to bottom, var(--styx-deep) 0%, var(--styx-mist) 100%);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        #shore-phase.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .mist {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.4;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(45, 45, 68, 0.5) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(45, 45, 68, 0.4) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 90%, rgba(60, 60, 80, 0.3) 0%, transparent 60%);
+            animation: mistFlow 20s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        @keyframes mistFlow {
+            0%, 100% { transform: translateX(0) translateY(0); opacity: 0.4; }
+            25% { transform: translateX(15px) translateY(-5px); opacity: 0.5; }
+            50% { transform: translateX(20px) translateY(0); opacity: 0.35; }
+            75% { transform: translateX(10px) translateY(5px); opacity: 0.45; }
+        }
+
+        /* Ambient floating particles */
+        .ambient-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4;
+            overflow: hidden;
+        }
+
+        .ambient-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, rgba(200, 200, 212, 0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: particleRise 8s ease-in-out infinite;
+        }
+
+        .ambient-particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 7s; }
+        .ambient-particle:nth-child(2) { left: 25%; animation-delay: 1.5s; animation-duration: 9s; }
+        .ambient-particle:nth-child(3) { left: 40%; animation-delay: 3s; animation-duration: 6s; }
+        .ambient-particle:nth-child(4) { left: 55%; animation-delay: 0.5s; animation-duration: 8s; }
+        .ambient-particle:nth-child(5) { left: 70%; animation-delay: 2s; animation-duration: 10s; }
+        .ambient-particle:nth-child(6) { left: 85%; animation-delay: 4s; animation-duration: 7s; }
+        .ambient-particle:nth-child(7) { left: 15%; animation-delay: 2.5s; animation-duration: 9s; }
+        .ambient-particle:nth-child(8) { left: 60%; animation-delay: 1s; animation-duration: 8s; }
+
+        @keyframes particleRise {
+            0% { bottom: -10px; opacity: 0; transform: scale(0.5); }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.3; }
+            100% { bottom: 100%; opacity: 0; transform: scale(1.2); }
+        }
+
+        /* Water shimmer effect at shore edge */
+        .water-shimmer {
+            position: absolute;
+            top: 32%;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(100, 150, 180, 0.3) 20%, 
+                rgba(150, 180, 200, 0.4) 50%, 
+                rgba(100, 150, 180, 0.3) 80%, 
+                transparent 100%);
+            animation: waterShimmer 3s ease-in-out infinite;
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        @keyframes waterShimmer {
+            0%, 100% { opacity: 0.5; transform: scaleX(1); }
+            50% { opacity: 0.8; transform: scaleX(1.02); }
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 20px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 5;
+            background: linear-gradient(to bottom, rgba(10, 10, 18, 0.97) 0%, rgba(10, 10, 18, 0.85) 70%, transparent 100%);
+        }
+
+        .hud-section {
+            text-align: center;
+            flex: 0 0 90px;
+            padding-top: 5px;
+        }
+
+        .hud-section.hud-center {
+            flex: 1 1 auto;
+            padding-top: 0;
+        }
+
+        .hud-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--gold-dark);
+            margin-bottom: 4px;
+        }
+
+        .hud-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--gold-coin);
+            text-shadow: 0 0 20px rgba(212, 168, 83, 0.5);
+        }
+
+        .hud-section.hud-center .hud-value {
+            font-size: 1.3rem;
+        }
+
+        .hud-value.warning {
+            color: var(--blood-red);
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        #quota-display {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .quota-soul {
+            width: 12px;
+            height: 15px;
+            border: 1px solid var(--gold-dark);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .quota-soul.filled {
+            background: var(--gold-coin);
+            box-shadow: 0 0 6px rgba(212, 168, 83, 0.6);
+        }
+
+        #shift-display {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            color: var(--gold-coin);
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(212, 168, 83, 0.5);
+            font-weight: 700;
+        }
+
+        #phase-indicator {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: var(--soul-pale);
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* Shore Area */
+        #shore {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65%;
+            background: linear-gradient(to bottom, transparent 0%, var(--shore-brown) 15%);
+            border-top: 3px solid var(--styx-mist);
+        }
+
+        #shore::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(to bottom, rgba(26, 26, 46, 0.9) 0%, rgba(42, 36, 32, 0.3) 100%);
+            animation: waterLap 3s ease-in-out infinite;
+        }
+
+        @keyframes waterLap {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+
+        /* Boat Display (Shore Phase) */
+        #boat-display {
+            position: absolute;
+            top: 115px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 5;
+        }
+
+        #boat-visual {
+            width: 160px;
+            height: 45px;
+            background: linear-gradient(to bottom, #3d2817 0%, #2a1a0f 100%);
+            border-radius: 10px 10px 50% 50% / 10px 10px 100% 100%;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            animation: boatBob 4s ease-in-out infinite;
+        }
+
+        @keyframes boatBob {
+            0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+            50% { transform: translateY(4px) rotate(0.5deg); }
+        }
+
+        #boat-souls-display {
+            position: absolute;
+            top: -8px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .boat-soul-icon {
+            width: 16px;
+            height: 20px;
+            border: 1px dashed rgba(200, 200, 212, 0.3);
+            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+            transition: all 0.3s ease;
+        }
+
+        .boat-soul-icon.filled {
+            background: radial-gradient(ellipse at center, var(--soul-pale) 0%, var(--soul-glow) 100%);
+            border: none;
+            box-shadow: 0 0 8px var(--soul-glow);
+        }
+
+        /* Boat receives soul pulse */
+        #boat-visual.receiving-soul {
+            animation: boatBob 4s ease-in-out infinite, boatReceive 0.4s ease-out;
+        }
+
+        @keyframes boatReceive {
+            0% { box-shadow: 0 8px 25px rgba(0,0,0,0.5); }
+            50% { box-shadow: 0 8px 25px rgba(0,0,0,0.5), 0 0 30px rgba(212, 168, 83, 0.8), 0 0 50px rgba(200, 200, 212, 0.5); }
+            100% { box-shadow: 0 8px 25px rgba(0,0,0,0.5); }
+        }
+
+        .boat-soul-icon.just-filled {
+            animation: soulIconPop 0.4s ease-out;
+        }
+
+        @keyframes soulIconPop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Boat full - ready to sail */
+        #boat-display.boat-full #boat-visual {
+            animation: boatBob 4s ease-in-out infinite, boatFullPulse 0.8s ease-in-out infinite;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5), 0 0 20px rgba(212, 168, 83, 0.6);
+        }
+
+        #boat-display.boat-full #boat-count {
+            color: var(--gold-bright);
+            animation: textPulse 0.8s ease-in-out infinite;
+        }
+
+        #boat-display.boat-full .boat-soul-icon.filled {
+            animation: soulPulse 0.8s ease-in-out infinite;
+        }
+
+        @keyframes boatFullPulse {
+            0%, 100% { box-shadow: 0 8px 25px rgba(0,0,0,0.5), 0 0 15px rgba(212, 168, 83, 0.4); }
+            50% { box-shadow: 0 8px 25px rgba(0,0,0,0.5), 0 0 30px rgba(212, 168, 83, 0.8); }
+        }
+
+        @keyframes textPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes soulPulse {
+            0%, 100% { box-shadow: 0 0 8px var(--soul-glow); transform: scale(1); }
+            50% { box-shadow: 0 0 15px var(--gold-coin); transform: scale(1.1); }
+        }
+
+        #boat-count {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            color: var(--gold-dark);
+            margin-top: 50px;
+        }
+
+        /* Charon Character */
+        #charon {
+            position: absolute;
+            width: 60px;
+            height: 90px;
+            z-index: 50;
+            animation: charonFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes charonFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .charon-body {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .charon-cloak {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 70px;
+            background: linear-gradient(to bottom, #2a2a3e 0%, #1a1a2e 50%, #0f0f1a 100%);
+            border-radius: 25px 25px 20px 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            animation: cloakBillow 4s ease-in-out infinite;
+        }
+
+        @keyframes cloakBillow {
+            0%, 100% { border-radius: 25px 25px 20px 20px; }
+            25% { border-radius: 25px 25px 25px 15px; }
+            75% { border-radius: 25px 25px 15px 25px; }
+        }
+
+        /* Cloak wispy edges */
+        .charon-cloak::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 15px;
+            background: linear-gradient(to bottom, #0f0f1a 0%, transparent 100%);
+            filter: blur(3px);
+            animation: cloakWisp 2s ease-in-out infinite;
+        }
+
+        @keyframes cloakWisp {
+            0%, 100% { opacity: 0.6; transform: translateX(-50%) scaleX(1); }
+            50% { opacity: 0.3; transform: translateX(-50%) scaleX(1.2); }
+        }
+
+        .charon-hood {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 45px;
+            background: radial-gradient(ellipse at 50% 80%, #1a1a2e 0%, #0a0a12 100%);
+            border-radius: 50% 50% 45% 45%;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .charon-eyes {
+            position: absolute;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .charon-eye {
+            width: 6px;
+            height: 4px;
+            background: var(--gold-coin);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--gold-coin), 0 0 20px var(--gold-coin);
+            animation: eyeGlow 2s ease-in-out infinite;
+        }
+
+        .charon-eye:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes eyeGlow {
+            0%, 100% { box-shadow: 0 0 10px var(--gold-coin), 0 0 20px var(--gold-coin); }
+            50% { box-shadow: 0 0 15px var(--gold-coin), 0 0 30px var(--gold-coin), 0 0 40px rgba(212, 168, 83, 0.3); }
+        }
+
+        .charon-oar {
+            position: absolute;
+            top: 30px;
+            right: -15px;
+            width: 8px;
+            height: 70px;
+            background: linear-gradient(to bottom, #4a3828 0%, #3d2817 100%);
+            border-radius: 4px;
+            transform: rotate(15deg);
+            transform-origin: top center;
+            animation: oarSway 3s ease-in-out infinite;
+        }
+
+        @keyframes oarSway {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(18deg); }
+        }
+
+        .charon-oar::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 25px;
+            background: #3d2817;
+            border-radius: 5px 5px 10px 10px;
+        }
+
+        #charon.facing-left .charon-oar {
+            right: auto;
+            left: -15px;
+            transform: rotate(-15deg);
+            animation: oarSwayLeft 3s ease-in-out infinite;
+        }
+
+        @keyframes oarSwayLeft {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(-18deg); }
+        }
+
+        .interaction-radius {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border: 2px dashed rgba(212, 168, 83, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            animation: radiusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes radiusPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        #charon.near-soul .interaction-radius {
+            opacity: 1;
+        }
+
+        /* Souls */
+        .soul {
+            position: absolute;
+            width: 40px;
+            height: 55px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .soul-figure {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 30%, var(--soul-pale) 0%, rgba(200, 200, 212, 0.5) 50%, transparent 70%);
+            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+            box-shadow: 0 0 25px var(--soul-glow);
+            animation: soulFloat 3s ease-in-out infinite, soulShimmer 4s ease-in-out infinite;
+        }
+
+        @keyframes soulFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-8px) scale(1.02); }
+        }
+
+        @keyframes soulShimmer {
+            0%, 100% { filter: brightness(1) blur(0px); }
+            50% { filter: brightness(1.2) blur(0.5px); }
+        }
+
+        /* Wispy trail effect */
+        .soul::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 20px;
+            background: linear-gradient(to bottom, rgba(200, 200, 212, 0.4) 0%, transparent 100%);
+            border-radius: 50%;
+            filter: blur(4px);
+            animation: wispyTrail 2s ease-in-out infinite;
+        }
+
+        @keyframes wispyTrail {
+            0%, 100% { opacity: 0.6; transform: translateX(-50%) scaleY(1); }
+            50% { opacity: 0.2; transform: translateX(-50%) scaleY(1.5); }
+        }
+
+        /* Soul face glow */
+        .soul-figure::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 8px;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.5) 0%, transparent 70%);
+            animation: soulFaceGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes soulFaceGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .soul.decaying .soul-figure {
+            animation: soulFloat 3s ease-in-out infinite, soulFlicker 0.3s ease-in-out infinite;
+        }
+
+        .soul.decaying::after {
+            animation: wispyTrailDecay 0.5s ease-in-out infinite;
+        }
+
+        @keyframes soulFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes wispyTrailDecay {
+            0%, 100% { opacity: 0.8; transform: translateX(-50%) scaleY(1.2); }
+            50% { opacity: 0.3; transform: translateX(-50%) scaleY(0.8); }
+        }
+
+        .obol-indicator {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+            z-index: 200;
+            pointer-events: none;
+        }
+
+        .soul.revealed {
+            z-index: 60;
+        }
+
+        .soul.revealed .obol-indicator {
+            transform: translateX(-50%) scale(1);
+        }
+
+        .obol-indicator.has-obol {
+            background: var(--gold-coin);
+            color: var(--styx-deep);
+            box-shadow: 0 0 15px rgba(212, 168, 83, 0.8);
+        }
+
+        .obol-indicator.no-obol {
+            background: var(--blood-red);
+            color: white;
+            box-shadow: 0 0 10px rgba(139, 41, 66, 0.8);
+        }
+
+        .soul.targetable {
+            z-index: 65;
+        }
+
+        .soul.targetable .soul-figure {
+            animation: soulFloat 3s ease-in-out infinite, targetGlow 1.2s ease-in-out infinite;
+        }
+
+        /* Ethereal aura that follows soul shape */
+        .soul.targetable .soul-figure::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: radial-gradient(ellipse at 50% 30%, 
+                rgba(255, 215, 100, 0.9) 0%, 
+                rgba(212, 168, 83, 0.7) 30%, 
+                rgba(212, 168, 83, 0.4) 55%, 
+                transparent 75%);
+            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+            animation: etherealPulse 1.2s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes etherealPulse {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: 1;
+                filter: blur(4px);
+            }
+            50% { 
+                transform: scale(1.2); 
+                opacity: 0.85;
+                filter: blur(6px);
+            }
+        }
+
+        @keyframes targetGlow {
+            0%, 100% { 
+                box-shadow: 0 0 25px var(--soul-glow), 0 0 40px rgba(212, 168, 83, 0.6);
+                filter: brightness(1.2);
+            }
+            50% { 
+                box-shadow: 0 0 35px var(--soul-glow), 0 0 55px rgba(212, 168, 83, 0.8);
+                filter: brightness(1.4);
+            }
+        }
+
+        .soul.targetable::before {
+            content: '▼';
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--gold-coin);
+            font-size: 14px;
+            animation: targetBounce 0.6s ease-in-out infinite;
+            text-shadow: 0 0 10px var(--gold-coin), 0 0 20px var(--gold-coin);
+        }
+
+        /* Outer ethereal wisps */
+        .soul.targetable::after {
+            content: '';
+            position: absolute;
+            top: -18px;
+            left: -18px;
+            right: -18px;
+            bottom: -18px;
+            background: radial-gradient(ellipse at 50% 40%, 
+                rgba(255, 220, 120, 0.5) 0%,
+                rgba(212, 168, 83, 0.35) 40%, 
+                rgba(212, 168, 83, 0.15) 65%,
+                transparent 85%);
+            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+            animation: outerWisp 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes outerWisp {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.15) rotate(3deg); opacity: 0.8; }
+        }
+
+        @keyframes targetBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        .decay-bar {
+            position: absolute;
+            bottom: -8px;
+            left: 5px;
+            right: 5px;
+            height: 4px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .decay-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--blood-red), var(--gold-coin));
+        }
+
+        .soul.boarding {
+            --board-x: 0px;
+            --board-y: -100px;
+            animation: boardBoat 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+            z-index: 100;
+        }
+
+        .soul.boarding::after,
+        .soul.boarding::before {
+            display: none !important;
+        }
+
+        .soul.boarding .soul-figure {
+            animation: boardingGlow 0.8s ease-out forwards !important;
+        }
+
+        @keyframes boardingGlow {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.5); }
+            100% { filter: brightness(2); }
+        }
+
+        @keyframes boardBoat {
+            0% { 
+                transform: translate(0, 0) scale(1); 
+                opacity: 1; 
+                filter: brightness(1) drop-shadow(0 0 10px var(--gold-coin));
+            }
+            20% { 
+                transform: translate(0, -10px) scale(1.2); 
+                opacity: 1; 
+                filter: brightness(1.4) drop-shadow(0 0 20px var(--gold-coin));
+            }
+            50% { 
+                transform: translate(calc(var(--board-x) * 0.5), calc(var(--board-y) * 0.4)) scale(0.8); 
+                opacity: 0.9; 
+                filter: brightness(1.6) drop-shadow(0 0 25px var(--gold-coin));
+            }
+            80% { 
+                transform: translate(calc(var(--board-x) * 0.9), calc(var(--board-y) * 0.85)) scale(0.3); 
+                opacity: 0.6; 
+                filter: brightness(2) drop-shadow(0 0 15px var(--gold-coin));
+            }
+            100% { 
+                transform: translate(var(--board-x), var(--board-y)) scale(0); 
+                opacity: 0; 
+                filter: brightness(3) drop-shadow(0 0 30px white);
+            }
+        }
+
+        .soul.rejected {
+            animation: rejectShake 0.4s ease-out;
+        }
+
+        @keyframes rejectShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-15px) rotate(-5deg); }
+            60% { transform: translateX(10px) rotate(3deg); }
+        }
+
+        /* Successfully rejected a penniless shade - satisfying banish! */
+        .soul.rightfully-banished {
+            animation: righteousBanish 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+        }
+
+        .soul.rightfully-banished::after {
+            display: none !important;
+        }
+
+        .soul.rightfully-banished::before {
+            content: '✕' !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            font-size: 30px !important;
+            color: var(--blood-red) !important;
+            text-shadow: 0 0 20px var(--blood-red), 0 0 40px rgba(139, 41, 66, 0.8) !important;
+            animation: banishMark 0.3s ease-out forwards !important;
+            z-index: 100 !important;
+        }
+
+        @keyframes righteousBanish {
+            0% { 
+                transform: translate(0, 0) scale(1) rotate(0deg); 
+                opacity: 1; 
+                filter: brightness(1);
+            }
+            15% { 
+                transform: translate(0, -15px) scale(1.2) rotate(0deg); 
+                opacity: 1; 
+                filter: brightness(1.5);
+            }
+            100% { 
+                transform: translate(200px, -150px) scale(0.2) rotate(360deg); 
+                opacity: 0; 
+                filter: brightness(0.3) blur(4px);
+            }
+        }
+
+        @keyframes banishMark {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        /* Wrongly rejected a paying soul - shameful */
+        .soul.wrongly-banished {
+            animation: wrongfulBanish 0.5s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards !important;
+        }
+
+        .soul.wrongly-banished::before,
+        .soul.wrongly-banished::after {
+            display: none !important;
+        }
+
+        @keyframes wrongfulBanish {
+            0% { 
+                transform: translate(0, 0) scale(1); 
+                opacity: 1; 
+                filter: brightness(1);
+            }
+            20% { 
+                transform: translate(0, -10px) scale(1.1); 
+                opacity: 1; 
+                filter: brightness(0.7) sepia(0.5);
+            }
+            100% { 
+                transform: translate(-120px, 200px) scale(0.15) rotate(-45deg); 
+                opacity: 0; 
+                filter: brightness(0.2) sepia(1) blur(3px);
+            }
+        }
+
+        .soul.faded, .soul.banished {
+            animation: banishAway 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+        }
+
+        .soul.faded::before, .soul.faded::after,
+        .soul.banished::before, .soul.banished::after {
+            display: none !important;
+        }
+
+        @keyframes banishAway {
+            0% { 
+                transform: translate(0, 0) scale(1); 
+                opacity: 1; 
+                filter: brightness(1);
+            }
+            100% { 
+                transform: translate(0, 100px) scale(0.1); 
+                opacity: 0; 
+                filter: brightness(0.3) blur(5px);
+            }
+        }
+
+        /* Heracles */
+        .heracles {
+            position: absolute;
+            width: 70px;
+            height: 95px;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        .heracles-figure {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            filter: drop-shadow(0 0 8px rgba(180, 50, 50, 0.4));
+        }
+
+        .heracles-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 45px;
+            height: 55px;
+            background: linear-gradient(135deg, #e8c4a0 0%, #d4a574 50%, #b8956a 100%);
+            border-radius: 22px 22px 18px 18px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Chest muscles */
+        .heracles-body::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 18px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 100%);
+            border-radius: 50%;
+        }
+
+        /* Belt/loincloth */
+        .heracles-body::after {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 38px;
+            height: 15px;
+            background: linear-gradient(to bottom, #654a0e 0%, #4a3610 100%);
+            border-radius: 5px;
+        }
+
+        /* Arms container */
+        .heracles-arms {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 75px;
+            height: 40px;
+        }
+
+        .heracles-arm {
+            position: absolute;
+            top: 0;
+            width: 16px;
+            height: 38px;
+            background: linear-gradient(to bottom, #e8c4a0 0%, #d4a574 100%);
+            border-radius: 8px 8px 6px 6px;
+        }
+
+        .heracles-arm.left {
+            left: 0;
+            transform: rotate(20deg);
+        }
+
+        .heracles-arm.right {
+            right: 0;
+            transform: rotate(-20deg);
+        }
+
+        .heracles-head {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 32px;
+            background: radial-gradient(ellipse at 50% 40%, #f0d0b0 0%, #d4a574 100%);
+            border-radius: 50% 50% 45% 45%;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Beard */
+        .heracles-head::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 10px;
+            background: linear-gradient(to bottom, #5a4030 0%, #3a2820 100%);
+            border-radius: 0 0 50% 50%;
+        }
+
+        /* Lion pelt hood */
+        .heracles-pelt {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 45px;
+            background: radial-gradient(ellipse at 50% 80%, #c9922a 0%, #8B6914 40%, #5a4510 100%);
+            border-radius: 50% 50% 35% 35%;
+            z-index: 1;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Lion mane texture */
+        .heracles-pelt::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 58px;
+            height: 35px;
+            background: 
+                radial-gradient(ellipse at 20% 50%, #d4a030 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, #d4a030 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 20%, #c99020 0%, transparent 60%);
+            border-radius: 50%;
+            filter: blur(2px);
+        }
+
+        /* Lion face */
+        .heracles-pelt::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 22px;
+            height: 18px;
+            background: radial-gradient(ellipse at 50% 30%, #3a2a1a 0%, #2a1a0a 100%);
+            border-radius: 50% 50% 40% 40%;
+        }
+
+        /* Lion eyes on pelt */
+        .heracles-lion-eyes {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 2;
+        }
+
+        .heracles-lion-eye {
+            width: 6px;
+            height: 4px;
+            background: #ffcc00;
+            border-radius: 50%;
+            box-shadow: 0 0 4px #ffcc00;
+        }
+
+        /* Heracles' own eyes (angry) */
+        .heracles-eyes {
+            position: absolute;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 3;
+        }
+
+        .heracles-eye {
+            width: 5px;
+            height: 4px;
+            background: #1a0a00;
+            border-radius: 50%;
+            box-shadow: inset 0 -1px 0 rgba(255,255,255,0.2);
+        }
+
+        /* Club weapon */
+        .heracles-club {
+            position: absolute;
+            bottom: 5px;
+            right: -8px;
+            width: 12px;
+            height: 45px;
+            background: linear-gradient(to right, #5a4030 0%, #7a5a40 50%, #5a4030 100%);
+            border-radius: 4px 4px 8px 8px;
+            transform: rotate(-15deg);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+        }
+
+        .heracles-club::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 20px;
+            background: radial-gradient(ellipse at 50% 50%, #6a4a30 0%, #4a3020 100%);
+            border-radius: 50% 50% 40% 40%;
+        }
+
+        /* Warning indicator */
+        .heracles-warning {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            animation: warningPulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+            50% { transform: translateX(-50%) scale(1.2); opacity: 0.7; }
+        }
+
+        /* Force meter (shows when he's about to board) */
+        .heracles-force-bar {
+            position: absolute;
+            bottom: -12px;
+            left: 5px;
+            right: 5px;
+            height: 6px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .heracles-force-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #d4a853, #8b2942);
+            transition: width 0.1s linear;
+        }
+
+        .heracles.charging .heracles-figure {
+            animation: heraclesCharge 0.3s ease-in-out infinite;
+        }
+
+        @keyframes heraclesCharge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .heracles.boarding {
+            animation: heraclesBoard 0.8s ease-out forwards;
+        }
+
+        @keyframes heraclesBoard {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.3) translateY(-20px); }
+            100% { transform: scale(0.8) translateY(-80px); opacity: 0; }
+        }
+
+        .heracles.rejected {
+            animation: heraclesReject 0.6s ease-out;
+        }
+
+        @keyframes heraclesReject {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-30px) rotate(-10deg); }
+            40% { transform: translateX(20px) rotate(5deg); }
+            60% { transform: translateX(-10px) rotate(-3deg); }
+            100% { transform: translateX(0); }
+        }
+
+        .heracles.targetable .heracles-figure {
+            filter: drop-shadow(0 0 8px var(--gold-coin));
+        }
+
+        .heracles.targetable::after {
+            content: '▼';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--blood-red);
+            font-size: 16px;
+            animation: targetBounce 0.6s ease-in-out infinite;
+        }
+
+        /* ========== AENEAS - BONUS CHARACTER ========== */
+        .aeneas {
+            position: absolute;
+            width: 55px;
+            height: 75px;
+            z-index: 35;
+            pointer-events: none;
+        }
+
+        .aeneas-figure {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            filter: drop-shadow(0 0 12px rgba(212, 168, 83, 0.5));
+        }
+
+        .aeneas-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 45px;
+            background: linear-gradient(135deg, #8b0000 0%, #6b0000 50%, #4a0000 100%);
+            border-radius: 15px 15px 12px 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* Golden breastplate */
+        .aeneas-body::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26px;
+            height: 22px;
+            background: linear-gradient(150deg, #f0d080 0%, #d4a853 30%, #b8860b 60%, #8b6914 100%);
+            border-radius: 5px 5px 12px 12px;
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.4),
+                0 0 15px rgba(212, 168, 83, 0.6);
+        }
+
+        /* Pteruges (leather strips) */
+        .aeneas-body::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 12px;
+            background: repeating-linear-gradient(
+                90deg,
+                #6b0000 0px,
+                #6b0000 4px,
+                #4a0000 4px,
+                #4a0000 5px
+            );
+            border-radius: 0 0 3px 3px;
+        }
+
+        .aeneas-head {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 26px;
+            background: radial-gradient(ellipse at 50% 40%, #f5deb3 0%, #deb887 100%);
+            border-radius: 50% 50% 45% 45%;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Trojan helmet */
+        .aeneas-helmet {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 28px;
+            background: linear-gradient(150deg, #f0d080 0%, #d4a853 40%, #8b6914 100%);
+            border-radius: 50% 50% 30% 30%;
+            z-index: 1;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Helmet crest */
+        .aeneas-helmet::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 20px;
+            background: linear-gradient(to top, #8b0000 0%, #dc143c 100%);
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* Helmet plume */
+        .aeneas-helmet::after {
+            content: '';
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 16px;
+            background: linear-gradient(to bottom, #ff4040 0%, #dc143c 50%, #8b0000 100%);
+            border-radius: 50% 50% 20% 20%;
+            box-shadow: 0 2px 6px rgba(139, 0, 0, 0.5);
+        }
+
+        /* Cheek guards */
+        .aeneas-helmet-guards {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 36px;
+            height: 18px;
+        }
+
+        .aeneas-helmet-guard {
+            position: absolute;
+            top: 0;
+            width: 8px;
+            height: 16px;
+            background: linear-gradient(to bottom, #d4a853 0%, #8b6914 100%);
+            border-radius: 2px 2px 4px 4px;
+        }
+
+        .aeneas-helmet-guard.left {
+            left: 0;
+        }
+
+        .aeneas-helmet-guard.right {
+            right: 0;
+        }
+
+        .aeneas-eyes {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 2;
+        }
+
+        .aeneas-eye {
+            width: 4px;
+            height: 4px;
+            background: #2a1a0a;
+            border-radius: 50%;
+        }
+
+        /* Shield */
+        .aeneas-shield {
+            position: absolute;
+            bottom: 10px;
+            left: -10px;
+            width: 22px;
+            height: 28px;
+            background: linear-gradient(135deg, #f0d080 0%, #d4a853 30%, #8b6914 100%);
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            box-shadow: 
+                inset 2px 2px 4px rgba(255,255,255,0.3),
+                inset -2px -2px 4px rgba(0,0,0,0.2),
+                2px 3px 8px rgba(0,0,0,0.4);
+        }
+
+        /* Shield boss */
+        .aeneas-shield::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #fff8dc 0%, #d4a853 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(212, 168, 83, 0.8);
+        }
+
+        /* Golden Bough */
+        .golden-bough {
+            position: absolute;
+            top: 5px;
+            right: -15px;
+            width: 35px;
+            height: 50px;
+        }
+
+        /* Branch */
+        .golden-bough::before {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 30px;
+            background: linear-gradient(to top, #654a0e 0%, #8b6914 50%, #b8860b 100%);
+            border-radius: 2px;
+        }
+
+        /* Glowing leaves/star */
+        .golden-bough::after {
+            content: '✦';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            color: #fff8dc;
+            text-shadow: 
+                0 0 10px var(--gold-bright),
+                0 0 20px var(--gold-coin),
+                0 0 30px var(--gold-coin),
+                0 0 40px rgba(212, 168, 83, 0.5);
+            animation: boughGlow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes boughGlow {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); text-shadow: 0 0 10px var(--gold-bright), 0 0 20px var(--gold-coin), 0 0 30px var(--gold-coin); }
+            50% { opacity: 0.8; transform: translateX(-50%) scale(1.15); text-shadow: 0 0 15px var(--gold-bright), 0 0 30px var(--gold-coin), 0 0 50px var(--gold-coin); }
+        }
+
+        /* Golden aura */
+        .aeneas::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, rgba(255, 248, 220, 0.3) 0%, rgba(212, 168, 83, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            animation: aeneasAura 2s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes aeneasAura {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.5; }
+        }
+
+        .aeneas-label {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cinzel', serif;
+            font-size: 0.55rem;
+            color: var(--gold-coin);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            text-shadow: 0 0 10px rgba(212, 168, 83, 0.8);
+        }
+
+        .aeneas .aeneas-obol {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 18px;
+            background: var(--gold-coin);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: var(--styx-deep);
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(212, 168, 83, 0.8);
+            animation: obolPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes obolPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(212, 168, 83, 0.8); }
+            50% { box-shadow: 0 0 25px rgba(212, 168, 83, 1); }
+        }
+
+        .aeneas .aeneas-decay {
+            position: absolute;
+            bottom: -6px;
+            left: 5px;
+            right: 5px;
+            height: 4px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .aeneas .aeneas-decay-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--gold-dark), var(--gold-bright));
+        }
+
+        .aeneas.targetable {
+            z-index: 40;
+        }
+
+        .aeneas.targetable::after {
+            content: '★';
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--gold-bright);
+            font-size: 16px;
+            animation: starBounce 0.5s ease-in-out infinite;
+            text-shadow: 0 0 15px var(--gold-coin);
+        }
+
+        @keyframes starBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-8px); }
+        }
+
+        .aeneas.targetable .aeneas-body {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4), 
+                        0 0 25px rgba(212, 168, 83, 0.6),
+                        0 0 0 3px var(--gold-coin);
+        }
+
+        .aeneas.boarding {
+            animation: aeneasBoard 0.8s ease-out forwards;
+        }
+
+        @keyframes aeneasBoard {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4) translateY(-50px); opacity: 0.9; }
+            100% { transform: scale(0) translateY(-120px); opacity: 0; }
+        }
+
+        .aeneas.rejected {
+            animation: aeneasReject 0.8s ease-out forwards;
+        }
+
+        @keyframes aeneasReject {
+            0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+            30% { transform: scale(1.1); opacity: 0.8; filter: brightness(1.5); }
+            100% { transform: scale(0.3) translateY(40px); opacity: 0; filter: brightness(0.3) blur(5px); }
+        }
+
+        /* Obstacle deflected by Golden Bough */
+        .obstacle.deflected {
+            animation: obstacleDeflect 0.3s ease-out forwards;
+        }
+
+        @keyframes obstacleDeflect {
+            0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+            50% { transform: scale(1.3); opacity: 0.8; filter: brightness(2) hue-rotate(40deg); }
+            100% { transform: scale(0); opacity: 0; filter: brightness(3); }
+        }
+
+        /* Aeneas on river boat */
+        .aeneas-on-boat {
+            position: absolute;
+            bottom: 85px;
+            left: 25%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 28px;
+            z-index: 46;
+        }
+
+        .aeneas-on-boat .mini-body {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #b8860b 0%, #8b6914 100%);
+            border-radius: 40% 40% 35% 35%;
+            box-shadow: 0 0 10px rgba(212, 168, 83, 0.6);
+        }
+
+        .aeneas-on-boat .mini-head {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: #deb887;
+            border-radius: 50%;
+        }
+
+        .aeneas-on-boat .mini-bough {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            font-size: 12px;
+            color: var(--gold-bright);
+            text-shadow: 0 0 8px var(--gold-coin);
+            animation: miniBoughGlow 1s ease-in-out infinite;
+        }
+
+        @keyframes miniBoughGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Golden Bough charges display */
+        #golden-bough-display {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Cinzel', serif;
+            color: var(--gold-coin);
+            text-shadow: 0 0 10px rgba(212, 168, 83, 0.5);
+        }
+
+        #golden-bough-display.active {
+            display: flex;
+        }
+
+        #golden-bough-display .bough-icon {
+            font-size: 1.2rem;
+        }
+
+        #golden-bough-display .bough-charges {
+            display: flex;
+            gap: 4px;
+        }
+
+        #golden-bough-display .charge {
+            width: 12px;
+            height: 12px;
+            background: var(--gold-coin);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(212, 168, 83, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        #golden-bough-display .charge.used {
+            background: var(--styx-mist);
+            box-shadow: none;
+            opacity: 0.4;
+        }
+
+        /* ========== RIVER PHASE ========== */
+        #river-phase {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, #0a0a15 0%, #12121f 50%, #1a1a2e 100%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            overflow: hidden;
+        }
+
+        #river-phase.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* River water effect */
+        #river-water {
+            position: absolute;
+            inset: 0;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 40px,
+                    rgba(26, 26, 46, 0.3) 40px,
+                    rgba(26, 26, 46, 0.3) 80px
+                );
+            animation: riverFlow 2s linear infinite;
+        }
+
+        @keyframes riverFlow {
+            from { transform: translateY(-80px); }
+            to { transform: translateY(0); }
+        }
+
+        /* River banks */
+        .river-bank {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: linear-gradient(to bottom, var(--shore-brown), #1f1a16);
+            z-index: 10;
+        }
+
+        .river-bank.left {
+            left: 0;
+            border-right: 3px solid #3d3028;
+        }
+
+        .river-bank.right {
+            right: 0;
+            border-left: 3px solid #3d3028;
+        }
+
+        /* Destination indicator */
+        #destination {
+            position: absolute;
+            top: 0;
+            left: 80px;
+            right: 80px;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(74, 124, 89, 0.4) 0%, transparent 100%);
+            border-bottom: 3px dashed var(--success-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        #destination span {
+            font-family: 'Cinzel', serif;
+            color: var(--success-green);
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        /* River boat */
+        #river-boat {
+            position: absolute;
+            width: 80px;
+            height: 120px;
+            z-index: 50;
+            transition: left 0.1s ease-out;
+        }
+
+        @keyframes boatFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Boat swaying when Heracles aboard */
+        #river-boat.heracles-aboard {
+            animation: heraclesSway 0.4s ease-in-out infinite;
+        }
+
+        @keyframes heraclesSway {
+            0%, 100% { transform: rotate(-8deg) translateX(-5px); }
+            50% { transform: rotate(8deg) translateX(5px); }
+        }
+
+        /* Heracles indicator on river boat */
+        .heracles-on-boat {
+            position: absolute;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 35px;
+            background: radial-gradient(ellipse at 50% 30%, #d4a574 0%, #a67c52 60%, transparent 100%);
+            border-radius: 45% 45% 48% 48% / 55% 55% 45% 45%;
+            z-index: 46;
+        }
+
+        .heracles-on-boat::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 12px;
+            background: radial-gradient(ellipse, #c9a227 0%, #8b6914 100%);
+            border-radius: 50%;
+        }
+
+        .river-boat-hull {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 50px;
+            background: linear-gradient(to bottom, #4a3828 0%, #2a1a0f 100%);
+            border-radius: 10px 10px 50% 50% / 10px 10px 100% 100%;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+
+        .river-boat-charon {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 50px;
+        }
+
+        .river-boat-charon .mini-hood {
+            width: 25px;
+            height: 30px;
+            background: radial-gradient(ellipse at 50% 80%, #1a1a2e 0%, #0a0a12 100%);
+            border-radius: 50% 50% 45% 45%;
+            margin: 0 auto;
+        }
+
+        .river-boat-charon .mini-eyes {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+
+        .river-boat-charon .mini-eye {
+            width: 4px;
+            height: 3px;
+            background: var(--gold-coin);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--gold-coin);
+        }
+
+        .river-boat-charon .mini-cloak {
+            width: 30px;
+            height: 25px;
+            background: linear-gradient(to bottom, #2a2a3e 0%, #1a1a2e 100%);
+            border-radius: 15px 15px 10px 10px;
+            margin: -5px auto 0;
+        }
+
+        /* Souls on river boat */
+        #river-boat-souls {
+            position: absolute;
+            bottom: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2px;
+            z-index: 45;
+        }
+
+        .river-soul {
+            width: 12px;
+            height: 16px;
+            background: radial-gradient(ellipse at 50% 30%, var(--soul-pale) 0%, rgba(200, 200, 212, 0.4) 100%);
+            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+            box-shadow: 0 0 8px var(--soul-glow);
+        }
+
+        /* Obstacles */
+        .obstacle {
+            position: absolute;
+            z-index: 30;
+        }
+
+        /* Rock obstacle */
+        .obstacle.rock {
+            width: 60px;
+            height: 50px;
+            background: radial-gradient(ellipse at 30% 30%, #4a4a5a 0%, #2a2a3a 50%, #1a1a2a 100%);
+            border-radius: 40% 50% 45% 55%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 -10px 20px rgba(0,0,0,0.3);
+        }
+
+        .obstacle.rock::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            width: 15px;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        /* Grasping hands obstacle */
+        .obstacle.hands {
+            width: 50px;
+            height: 60px;
+        }
+
+        .obstacle.hands::before,
+        .obstacle.hands::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background: linear-gradient(to top, rgba(100, 100, 120, 0.8) 0%, rgba(150, 150, 170, 0.6) 100%);
+            border-radius: 8px 8px 3px 3px;
+            animation: handsReach 1.5s ease-in-out infinite;
+        }
+
+        .obstacle.hands::before {
+            left: 5px;
+            animation-delay: 0s;
+        }
+
+        .obstacle.hands::after {
+            right: 5px;
+            animation-delay: 0.3s;
+        }
+
+        @keyframes handsReach {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        /* Whirlpool obstacle */
+        .obstacle.whirlpool {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #0a0a15 0%, #1a1a2e 40%, transparent 70%);
+            animation: whirlpoolSpin 2s linear infinite;
+            box-shadow: 0 0 30px rgba(26, 26, 46, 0.8);
+        }
+
+        .obstacle.whirlpool::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border: 2px solid rgba(100, 100, 140, 0.3);
+            border-radius: 50%;
+            border-top-color: transparent;
+            border-left-color: transparent;
+        }
+
+        .obstacle.whirlpool::after {
+            content: '';
+            position: absolute;
+            inset: 25px;
+            border: 2px solid rgba(100, 100, 140, 0.2);
+            border-radius: 50%;
+            border-bottom-color: transparent;
+            border-right-color: transparent;
+        }
+
+        @keyframes whirlpoolSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* River HUD */
+        #river-hud {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+        }
+
+        #river-souls-count {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            color: var(--gold-coin);
+            text-shadow: 0 0 15px rgba(212, 168, 83, 0.5);
+        }
+
+        #river-progress {
+            width: 200px;
+            height: 8px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        #river-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, var(--gold-dark), var(--gold-coin));
+            transition: width 0.1s linear;
+        }
+
+        /* Message Display */
+        #message {
+            position: fixed;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--gold-coin);
+            text-shadow: 0 0 30px rgba(212, 168, 83, 0.8);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            text-align: center;
+            z-index: 500;
+        }
+
+        #message.visible {
+            opacity: 1;
+        }
+
+        /* Controls hint */
+        #controls-hint {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            color: var(--gold-dark);
+            letter-spacing: 2px;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .key {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(212, 168, 83, 0.15);
+            border: 1px solid var(--gold-dark);
+            border-radius: 4px;
+            margin: 0 2px;
+        }
+
+        /* Touch Controls */
+        #touch-controls {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            z-index: 40;
+            pointer-events: none;
+        }
+
+        @media (pointer: coarse) and (hover: none) {
+            #touch-controls {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+            #controls-hint {
+                display: none;
+            }
+            #shore {
+                height: 52%;
+            }
+            #boat-display {
+                top: 125px;
+            }
+        }
+
+        #joystick-zone {
+            width: 130px;
+            height: 130px;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        #joystick-base {
+            width: 110px;
+            height: 110px;
+            background: rgba(212, 168, 83, 0.15);
+            border: 2px solid rgba(212, 168, 83, 0.4);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        #joystick-stick {
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle, var(--gold-coin) 0%, var(--gold-dark) 100%);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 32px;
+            left: 32px;
+            box-shadow: 0 0 15px rgba(212, 168, 83, 0.5);
+        }
+
+        #action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .touch-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 2px solid var(--gold-coin);
+            background: rgba(10, 10, 18, 0.85);
+            color: var(--gold-coin);
+            font-family: 'Cinzel', serif;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .touch-btn:active {
+            background: var(--gold-coin);
+            color: var(--styx-deep);
+        }
+
+        .touch-btn .icon {
+            font-size: 1.3rem;
+        }
+
+        .touch-btn.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Flash effects */
+        .penalty-flash {
+            position: fixed;
+            inset: 0;
+            background: rgba(139, 41, 66, 0.3);
+            pointer-events: none;
+            animation: flashOut 0.3s ease-out forwards;
+            z-index: 600;
+        }
+
+        .bonus-flash {
+            position: fixed;
+            inset: 0;
+            background: rgba(212, 168, 83, 0.2);
+            pointer-events: none;
+            animation: flashOut 0.3s ease-out forwards;
+            z-index: 600;
+        }
+
+        .reject-flash {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(100, 180, 100, 0.25) 0%, rgba(60, 120, 80, 0.15) 50%, transparent 70%);
+            pointer-events: none;
+            animation: rejectFlashOut 0.35s ease-out forwards;
+            z-index: 600;
+        }
+
+        @keyframes rejectFlashOut {
+            0% { opacity: 0; transform: scale(0.8); }
+            30% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.1); }
+        }
+
+        @keyframes flashOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Overlay Screens */
+        .overlay-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 18, 0.97);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 700;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            padding: 20px;
+        }
+
+        .overlay-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .overlay-screen h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            color: var(--gold-coin);
+            text-shadow: 0 0 40px rgba(212, 168, 83, 0.6);
+            margin-bottom: 10px;
+            letter-spacing: 8px;
+        }
+
+        .overlay-screen h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: var(--gold-coin);
+            margin-bottom: 25px;
+        }
+
+        .overlay-screen p {
+            font-size: 1.1rem;
+            color: var(--soul-pale);
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            color: var(--gold-dark);
+            margin-bottom: 25px;
+        }
+
+        .start-btn {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            padding: 12px 40px;
+            background: transparent;
+            border: 2px solid var(--gold-coin);
+            color: var(--gold-coin);
+            cursor: pointer;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            margin-top: 25px;
+        }
+
+        .start-btn:hover {
+            background: var(--gold-coin);
+            color: var(--styx-deep);
+        }
+
+        .instructions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            max-width: 500px;
+        }
+
+        .instruction-item {
+            text-align: center;
+            padding: 15px;
+            border: 1px solid var(--styx-mist);
+            border-radius: 8px;
+        }
+
+        .instruction-item .icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .instruction-item h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--gold-coin);
+            font-size: 0.75rem;
+            margin-bottom: 6px;
+        }
+
+        .instruction-item p {
+            font-size: 0.8rem;
+            margin-bottom: 0;
+        }
+
+        .final-stats {
+            display: flex;
+            gap: 30px;
+            margin: 25px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            color: var(--gold-coin);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--gold-dark);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .overlay-screen h1 { font-size: 2rem; }
+            .instructions { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .instruction-item { padding: 10px; }
+            .final-stats { gap: 20px; }
+            .stat-value { font-size: 2rem; }
+        }
+
+        /* ========== HEPHAESTUS FORGE (SHOP) ========== */
+        #forge-screen {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 100%, #3d1a0a 0%, #1a0a05 50%, #0a0505 100%);
+            z-index: 800;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            overflow-y: auto;
+        }
+
+        #forge-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .forge-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: #ff6b35;
+            text-shadow: 0 0 30px rgba(255, 107, 53, 0.8), 0 0 60px rgba(255, 60, 0, 0.4);
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .forge-subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: #b8860b;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .forge-currency {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 20px;
+            border-radius: 25px;
+            border: 2px solid #b8860b;
+            margin-bottom: 15px;
+        }
+
+        .forge-currency .coin-icon {
+            font-size: 1.3rem;
+        }
+
+        .forge-currency .coin-amount {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            color: var(--gold-bright);
+            text-shadow: 0 0 10px rgba(212, 168, 83, 0.5);
+        }
+
+        .forge-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+            max-width: 850px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .forge-item {
+            background: linear-gradient(135deg, #2a1508 0%, #1a0a04 100%);
+            border: 2px solid #5c3a1e;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .forge-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .forge-item:hover:not(.purchased):not(.cant-afford) {
+            border-color: #ff6b35;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .forge-item:hover::before {
+            opacity: 1;
+        }
+
+        .forge-item.purchased {
+            border-color: #2a5a2a;
+            opacity: 0.7;
+        }
+
+        .forge-item.purchased::after {
+            content: '✓ FORGED';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #2a5a2a;
+            color: #7fff7f;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-family: 'Cinzel', serif;
+        }
+
+        .forge-item.cant-afford {
+            opacity: 0.5;
+        }
+
+        .forge-item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .forge-item-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 107, 53, 0.2);
+            border-radius: 8px;
+        }
+
+        .forge-item-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            color: #ff9966;
+            flex: 1;
+        }
+
+        .forge-item-desc {
+            font-size: 0.75rem;
+            color: #a08070;
+            line-height: 1.3;
+        }
+
+        .forge-item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid #3d2010;
+        }
+
+        .forge-item-cost {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Cinzel', serif;
+            color: var(--gold-coin);
+            font-size: 0.9rem;
+        }
+
+        .forge-buy-btn {
+            background: linear-gradient(to bottom, #b8860b 0%, #8b6914 100%);
+            border: none;
+            color: #1a0a05;
+            padding: 6px 16px;
+            border-radius: 5px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+
+        .forge-buy-btn:hover:not(:disabled) {
+            background: linear-gradient(to bottom, #d4a853 0%, #b8860b 100%);
+            transform: scale(1.05);
+        }
+
+        .forge-buy-btn:disabled {
+            background: #3d3d3d;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .forge-continue {
+            background: linear-gradient(to bottom, #ff6b35 0%, #cc4a1a 100%);
+            border: none;
+            color: white;
+            padding: 12px 40px;
+            border-radius: 8px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(255, 107, 53, 0.4);
+            margin-top: 10px;
+        }
+
+        .forge-continue:hover {
+            background: linear-gradient(to bottom, #ff8c5a 0%, #ff6b35 100%);
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.6);
+        }
+
+        .forge-anvil {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            animation: anvilGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes anvilGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px #ff6b35); }
+            50% { filter: drop-shadow(0 0 25px #ff6b35) drop-shadow(0 0 40px #ff3300); }
+        }
+
+        .shift-summary {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #5c3a1e;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .shift-summary h3 {
+            font-family: 'Cinzel', serif;
+            color: #ff9966;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .shift-summary p {
+            color: #b8a090;
+            font-size: 0.85rem;
+            margin: 4px 0;
+        }
+
+        .shift-summary .bonus-souls {
+            color: var(--gold-bright);
+            font-size: 1rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- SHORE PHASE -->
+        <div id="shore-phase">
+            <div class="mist"></div>
+            <div class="water-shimmer"></div>
+            <div class="ambient-particles">
+                <div class="ambient-particle"></div>
+                <div class="ambient-particle"></div>
+                <div class="ambient-particle"></div>
+                <div class="ambient-particle"></div>
+                <div class="ambient-particle"></div>
+                <div class="ambient-particle"></div>
+                <div class="ambient-particle"></div>
+                <div class="ambient-particle"></div>
+            </div>
+            
+            <div id="hud">
+                <div class="hud-section">
+                    <div class="hud-label">Time</div>
+                    <div class="hud-value" id="timer">60</div>
+                </div>
+                <div class="hud-section hud-center">
+                    <div id="shift-display">SHIFT I</div>
+                    <div id="phase-indicator">⚓ SHORE</div>
+                    <div class="hud-label" style="margin-top: 8px;">Quota</div>
+                    <div class="hud-value" id="quota-text">0 / 5</div>
+                </div>
+                <div class="hud-section">
+                    <div class="hud-label">Delivered</div>
+                    <div class="hud-value" id="total-delivered">0</div>
+                </div>
+            </div>
+
+            <div id="boat-display">
+                <div id="boat-visual">
+                    <div id="boat-souls-display"></div>
+                </div>
+                <div id="boat-count">Aboard: <span id="aboard-count">0</span> / 6</div>
+            </div>
+
+            <div id="shore">
+                <div id="charon">
+                    <div class="charon-body">
+                        <div class="charon-hood">
+                            <div class="charon-eyes">
+                                <div class="charon-eye"></div>
+                                <div class="charon-eye"></div>
+                            </div>
+                        </div>
+                        <div class="charon-cloak"></div>
+                        <div class="charon-oar"></div>
+                    </div>
+                    <div class="interaction-radius"></div>
+                </div>
+            </div>
+
+            <div id="controls-hint">
+                <span class="key">WASD</span> Move
+                <span class="key">SPACE</span> Board
+                <span class="key">R</span> Reject
+                <span class="key">E</span> Set Sail
+            </div>
+        </div>
+
+        <!-- RIVER PHASE -->
+        <div id="river-phase">
+            <div id="river-water"></div>
+            <div class="river-bank left"></div>
+            <div class="river-bank right"></div>
+            
+            <div id="destination">
+                <span>⛧ Hades' Shore ⛧</span>
+            </div>
+
+            <div id="river-hud">
+                <div id="river-souls-count">Souls: <span id="river-souls-num">0</span></div>
+                <div id="river-progress">
+                    <div id="river-progress-fill"></div>
+                </div>
+                <div id="golden-bough-display">
+                    <span class="bough-icon">✦</span>
+                    <div class="bough-charges">
+                        <div class="charge" data-charge="1"></div>
+                        <div class="charge" data-charge="2"></div>
+                        <div class="charge" data-charge="3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="river-boat">
+                <div id="river-boat-souls"></div>
+                <div id="river-boat-aeneas" class="aeneas-on-boat" style="display: none;">
+                    <div class="mini-head"></div>
+                    <div class="mini-body"></div>
+                    <div class="mini-bough">✦</div>
+                </div>
+                <div class="river-boat-charon">
+                    <div class="mini-hood">
+                        <div class="mini-eyes">
+                            <div class="mini-eye"></div>
+                            <div class="mini-eye"></div>
+                        </div>
+                    </div>
+                    <div class="mini-cloak"></div>
+                </div>
+                <div class="river-boat-hull"></div>
+            </div>
+        </div>
+
+        <!-- Touch Controls -->
+        <div id="touch-controls">
+            <div id="joystick-zone">
+                <div id="joystick-base">
+                    <div id="joystick-stick"></div>
+                </div>
+            </div>
+            <div id="action-buttons">
+                <button class="touch-btn" id="btn-deliver">
+                    <span class="icon">⛵</span>
+                    <span>Sail</span>
+                </button>
+                <button class="touch-btn" id="btn-board">
+                    <span class="icon">👻</span>
+                    <span>Board</span>
+                </button>
+                <button class="touch-btn" id="btn-reject">
+                    <span class="icon">✕</span>
+                    <span>Reject</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="overlay-screen visible">
+        <h1>CHARON</h1>
+        <p class="subtitle">Ferryman of the Dead</p>
+        <p>Guide souls across the River Styx. Collect the worthy on the shore, then navigate treacherous waters to deliver them to Hades.</p>
+        
+        <div class="instructions">
+            <div class="instruction-item">
+                <div class="icon">🪙</div>
+                <h3>Check Obols</h3>
+                <p>Only souls with payment may board.</p>
+            </div>
+            <div class="instruction-item">
+                <div class="icon">⛵</div>
+                <h3>Cross the Styx</h3>
+                <p>Avoid obstacles on the river.</p>
+            </div>
+            <div class="instruction-item">
+                <div class="icon">🪨</div>
+                <h3>Dodge Hazards</h3>
+                <p>Rocks, hands, and whirlpools await.</p>
+            </div>
+            <div class="instruction-item">
+                <div class="icon">⏱️</div>
+                <h3>Meet Quota</h3>
+                <p>Deliver enough souls each shift.</p>
+            </div>
+        </div>
+
+        <button class="start-btn" id="start-btn">Begin Ferrying</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="overlay-screen">
+        <h2 id="gameover-title">Shift Complete</h2>
+        <div class="final-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="final-delivered">0</div>
+                <div class="stat-label">Delivered</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="final-lost">0</div>
+                <div class="stat-label">Lost</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="final-shifts">0</div>
+                <div class="stat-label">Shifts</div>
+            </div>
+        </div>
+        <p id="gameover-message"></p>
+        <button class="start-btn" id="restart-btn">Ferry Again</button>
+    </div>
+
+    <!-- HEPHAESTUS FORGE (SHOP) -->
+    <div id="forge-screen">
+        <div class="forge-anvil">⚒️</div>
+        <h1 class="forge-title">Hephaestus' Forge</h1>
+        <p class="forge-subtitle">Trade excess souls for divine craftsmanship</p>
+        
+        <div class="shift-summary">
+            <h3>Shift <span id="forge-shift-num">I</span> Complete</h3>
+            <p>Quota: <span id="forge-quota-met">5</span> delivered</p>
+            <p class="bonus-souls">+<span id="forge-bonus-souls">0</span> excess souls converted to coins</p>
+        </div>
+        
+        <div class="forge-currency">
+            <span class="coin-icon">🪙</span>
+            <span class="coin-amount" id="forge-coins">0</span>
+        </div>
+        
+        <div class="forge-items" id="forge-items">
+            <!-- Items populated by JS -->
+        </div>
+        
+        <button class="forge-continue" id="forge-continue-btn">Continue to Shift <span id="forge-next-shift">II</span></button>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            charonSpeed: 4,
+            interactionRadius: 70,
+            revealRadius: 90,
+            soulBaseSpeed: 0.5,
+            soulSpeedVariance: 0.4,
+            boatCapacity: 6,
+            baseQuota: 5,
+            baseTime: 70,
+            baseObolChance: 0.7,
+            baseDecayRate: 1.0,
+            maxSouls: 10,
+            // River settings
+            riverBoatSpeed: 3.5,
+            riverCrossingTime: 0.005, // Even longer crossing
+            obstacleBaseSpeed: 1.5,
+            obstacleMaxSpeedMultiplier: 3, // Speed triples by end of crossing
+            riverWidth: 0,
+            bankWidth: 80,
+            // Heracles settings
+            heraclesSpawnInterval: 45000, // 45 seconds base
+            heraclesSpeed: 1.8,
+            heraclesForceDistance: 60,
+            heraclesForceTime: 3000,
+            heraclesRejectCooldown: 5000,
+            // Aeneas settings
+            aeneasSpawnInterval: 55000, // 55 seconds base (rarer than Heracles)
+            aeneasSpeed: 0.8, // Moves gracefully
+            aeneasDecayRate: 2.0, // Decays faster - he won't wait long!
+            aeneasTimeBonus: 12, // Seconds added when boarded
+            aeneasSoulBonus: 2 // Counts as 2 souls toward quota
+        };
+
+        // ==================== GAME STATE ====================
+        const state = {
+            phase: 'shore', // 'shore' or 'river'
+            charon: { x: 0, y: 0 },
+            souls: [],
+            boatSouls: 0,
+            delivered: 0,
+            totalDelivered: 0,
+            lost: 0,
+            quota: CONFIG.baseQuota,
+            timeRemaining: CONFIG.baseTime,
+            shift: 1,
+            isRunning: false,
+            isPaused: false,
+            keys: {},
+            nearestSoul: null,
+            // River state
+            riverBoat: { x: 0, y: 0 },
+            riverProgress: 0,
+            riverSouls: 0,
+            riverInvincible: 0, // Invincibility frames after hit
+            obstacles: [],
+            obstacleSpawnTimer: 0,
+            // Heracles state
+            heracles: null,
+            heraclesOnBoard: false,
+            heraclesSpawnTimer: 0,
+            heraclesTargeted: false,
+            // Aeneas state
+            aeneas: null,
+            aeneasSpawnTimer: 0,
+            aeneasTargeted: false,
+            aeneasOnBoard: false,
+            goldenBoughCharges: 0,
+            // Forge/Shop state
+            forgeCoins: 0,
+            purchasedPowerups: [],
+            activePowerups: {}, // Effects active for current shift
+            obstacleSpawnMultiplier: 1.0
+        };
+
+        // ==================== FORGE POWERUPS ====================
+        const POWERUPS = [
+            {
+                id: 'swiftOar',
+                name: 'Swift Oar',
+                icon: '🏃',
+                desc: 'Charon moves 25% faster on the shore',
+                cost: 20,
+                effect: { charonSpeedBonus: 1.25 }
+            },
+            {
+                id: 'sturdyHull',
+                name: 'Sturdy Hull',
+                icon: '🛡️',
+                desc: 'Boat holds 2 extra souls',
+                cost: 35,
+                effect: { boatCapacityBonus: 2 }
+            },
+            {
+                id: 'lanternLight',
+                name: 'Lantern of Souls',
+                icon: '🏮',
+                desc: 'Souls decay 30% slower',
+                cost: 25,
+                effect: { decayRateMultiplier: 0.7 }
+            },
+            {
+                id: 'timeBlessing',
+                name: 'Chronos\' Blessing',
+                icon: '⏳',
+                desc: '+15 seconds for next shift',
+                cost: 12,
+                effect: { timeBonus: 15 },
+                consumable: true
+            },
+            {
+                id: 'calmWaters',
+                name: 'Calm Waters',
+                icon: '🌊',
+                desc: 'Fewer obstacles on the river',
+                cost: 30,
+                effect: { obstacleSpawnMultiplier: 0.6 }
+            },
+            {
+                id: 'hermesSandals',
+                name: 'Hermes\' Sandals',
+                icon: '👟',
+                desc: 'Boat steers 40% faster on river',
+                cost: 25,
+                effect: { riverBoatSpeedBonus: 1.4 }
+            },
+            {
+                id: 'goldenNet',
+                name: 'Golden Net',
+                icon: '🥅',
+                desc: 'Wider soul interaction radius',
+                cost: 20,
+                effect: { interactionRadiusBonus: 20 }
+            },
+            {
+                id: 'heraclesBane',
+                name: 'Heracles\' Bane',
+                icon: '⚡',
+                desc: 'Heracles is stunned twice as long',
+                cost: 25,
+                effect: { heraclesStunMultiplier: 2 }
+            }
+        ];
+
+        // ==================== DOM ELEMENTS ====================
+        const elements = {
+            shorePhase: document.getElementById('shore-phase'),
+            riverPhase: document.getElementById('river-phase'),
+            shore: document.getElementById('shore'),
+            charon: document.getElementById('charon'),
+            timer: document.getElementById('timer'),
+            quotaText: document.getElementById('quota-text'),
+            quotaDisplay: document.getElementById('quota-display'),
+            totalDelivered: document.getElementById('total-delivered'),
+            aboardCount: document.getElementById('aboard-count'),
+            boatDisplay: document.getElementById('boat-display'),
+            boatSoulsDisplay: document.getElementById('boat-souls-display'),
+            message: document.getElementById('message'),
+            shiftDisplay: document.getElementById('shift-display'),
+            phaseIndicator: document.getElementById('phase-indicator'),
+            startScreen: document.getElementById('start-screen'),
+            gameoverScreen: document.getElementById('gameover-screen'),
+            startBtn: document.getElementById('start-btn'),
+            restartBtn: document.getElementById('restart-btn'),
+            gameoverTitle: document.getElementById('gameover-title'),
+            gameoverMessage: document.getElementById('gameover-message'),
+            finalDelivered: document.getElementById('final-delivered'),
+            finalLost: document.getElementById('final-lost'),
+            finalShifts: document.getElementById('final-shifts'),
+            // River elements
+            riverBoat: document.getElementById('river-boat'),
+            riverBoatSouls: document.getElementById('river-boat-souls'),
+            riverBoatAeneas: document.getElementById('river-boat-aeneas'),
+            riverSoulsNum: document.getElementById('river-souls-num'),
+            riverProgressFill: document.getElementById('river-progress-fill'),
+            goldenBoughDisplay: document.getElementById('golden-bough-display'),
+            // Forge elements
+            forgeScreen: document.getElementById('forge-screen'),
+            forgeItems: document.getElementById('forge-items'),
+            forgeCoins: document.getElementById('forge-coins'),
+            forgeShiftNum: document.getElementById('forge-shift-num'),
+            forgeQuotaMet: document.getElementById('forge-quota-met'),
+            forgeBonusSouls: document.getElementById('forge-bonus-souls'),
+            forgeNextShift: document.getElementById('forge-next-shift'),
+            forgeContinueBtn: document.getElementById('forge-continue-btn')
+        };
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function showMessage(text, duration = 2000) {
+            elements.message.textContent = text;
+            elements.message.classList.add('visible');
+            setTimeout(() => elements.message.classList.remove('visible'), duration);
+        }
+
+        function flashScreen(type) {
+            const flash = document.createElement('div');
+            if (type === 'penalty') {
+                flash.className = 'penalty-flash';
+            } else if (type === 'reject') {
+                flash.className = 'reject-flash';
+            } else {
+                flash.className = 'bonus-flash';
+            }
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 300);
+        }
+
+        function toRoman(num) {
+            const romans = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+            return romans[num - 1] || num;
+        }
+
+        // ==================== SHORE PHASE ====================
+        function initBoatDisplay() {
+            elements.boatSoulsDisplay.innerHTML = '';
+            for (let i = 0; i < CONFIG.boatCapacity; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'boat-soul-icon';
+                elements.boatSoulsDisplay.appendChild(slot);
+            }
+        }
+
+        function updateBoatDisplay() {
+            const slots = elements.boatSoulsDisplay.querySelectorAll('.boat-soul-icon');
+            slots.forEach((slot, i) => {
+                slot.className = 'boat-soul-icon' + (i < state.boatSouls ? ' filled' : '');
+            });
+            elements.aboardCount.textContent = state.boatSouls;
+            
+            // Flash when boat is full
+            if (state.boatSouls >= CONFIG.boatCapacity) {
+                elements.boatDisplay.classList.add('boat-full');
+            } else {
+                elements.boatDisplay.classList.remove('boat-full');
+            }
+        }
+
+        function updateQuotaDisplay() {
+            if (elements.quotaDisplay) {
+                elements.quotaDisplay.innerHTML = '';
+                for (let i = 0; i < state.quota; i++) {
+                    const soul = document.createElement('div');
+                    soul.className = 'quota-soul' + (i < state.delivered ? ' filled' : '');
+                    elements.quotaDisplay.appendChild(soul);
+                }
+            }
+            elements.quotaText.textContent = `${state.delivered} / ${state.quota}`;
+        }
+
+        function createSoul() {
+            if (!state.isRunning || state.phase !== 'shore') return;
+            
+            const shoreRect = elements.shore.getBoundingClientRect();
+            const margin = 60;
+            const angle = Math.random() * Math.PI * 2;
+            const speed = CONFIG.soulBaseSpeed + (Math.random() * CONFIG.soulSpeedVariance);
+            
+            const soul = {
+                id: Date.now() + Math.random(),
+                x: margin + Math.random() * (shoreRect.width - margin * 2),
+                y: margin + Math.random() * (shoreRect.height - margin * 2),
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                hasObol: Math.random() < (CONFIG.baseObolChance - (state.shift - 1) * 0.05),
+                decay: 100,
+                decayRate: CONFIG.baseDecayRate + (state.shift * 0.15),
+                revealed: false,
+                element: null
+            };
+
+            const soulEl = document.createElement('div');
+            soulEl.className = 'soul';
+            soulEl.style.animationDelay = Math.random() * 2 + 's';
+            soulEl.innerHTML = `
+                <div class="soul-figure"></div>
+                <div class="obol-indicator ${soul.hasObol ? 'has-obol' : 'no-obol'}">
+                    ${soul.hasObol ? '●' : '✕'}
+                </div>
+                <div class="decay-bar">
+                    <div class="decay-fill" style="width: 100%"></div>
+                </div>
+            `;
+
+            elements.shore.appendChild(soulEl);
+            soul.element = soulEl;
+            state.souls.push(soul);
+            updateSoulPosition(soul);
+        }
+
+        function updateSoulPosition(soul) {
+            if (soul.element) {
+                soul.element.style.left = soul.x + 'px';
+                soul.element.style.top = soul.y + 'px';
+            }
+        }
+
+        function removeSoul(soul) {
+            state.souls = state.souls.filter(s => s.id !== soul.id);
+            if (soul.element && soul.element.parentNode) {
+                soul.element.remove();
+            }
+        }
+
+        function getDistance(soul) {
+            const dx = state.charon.x - soul.x;
+            const dy = state.charon.y - soul.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function findNearestSoul() {
+            let nearest = null;
+            let minDist = CONFIG.interactionRadius;
+
+            state.souls.forEach(soul => {
+                if (soul.element.classList.contains('boarding') || 
+                    soul.element.classList.contains('faded') ||
+                    soul.element.classList.contains('banished')) return;
+                
+                const dist = getDistance(soul);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = soul;
+                }
+            });
+
+            return nearest;
+        }
+
+        function boardSoul(soul) {
+            if (state.boatSouls >= CONFIG.boatCapacity) {
+                showMessage('Boat is full! Set sail first.', 1500);
+                return;
+            }
+
+            if (soul.hasObol) {
+                soul.element.classList.remove('targetable');
+                
+                // Calculate direction to boat
+                const soulRect = soul.element.getBoundingClientRect();
+                const boatVisual = document.getElementById('boat-visual');
+                const boatRect = boatVisual.getBoundingClientRect();
+                
+                // Get soul position relative to shore
+                const soulCenterX = soulRect.left + soulRect.width / 2;
+                const soulCenterY = soulRect.top + soulRect.height / 2;
+                
+                // Get boat position (center of boat)
+                const boatCenterX = boatRect.left + boatRect.width / 2;
+                const boatCenterY = boatRect.top + boatRect.height / 2;
+                
+                // Calculate offset to move soul towards boat
+                const deltaX = boatCenterX - soulCenterX;
+                const deltaY = boatCenterY - soulCenterY;
+                
+                // Set CSS custom properties for animation
+                soul.element.style.setProperty('--board-x', `${deltaX}px`);
+                soul.element.style.setProperty('--board-y', `${deltaY}px`);
+                
+                soul.element.classList.add('boarding');
+                flashScreen('bonus');
+                state.boatSouls++;
+                updateBoatDisplay();
+                
+                // Trigger boat receive animation when soul arrives
+                setTimeout(() => {
+                    boatVisual.classList.add('receiving-soul');
+                    // Add pop effect to the newly filled slot
+                    const slots = elements.boatSoulsDisplay.querySelectorAll('.boat-soul-icon.filled');
+                    if (slots.length > 0) {
+                        const lastSlot = slots[slots.length - 1];
+                        lastSlot.classList.add('just-filled');
+                        setTimeout(() => lastSlot.classList.remove('just-filled'), 400);
+                    }
+                    setTimeout(() => boatVisual.classList.remove('receiving-soul'), 400);
+                }, 600);
+                
+                setTimeout(() => removeSoul(soul), 800);
+            } else {
+                soul.element.classList.add('rejected');
+                flashScreen('penalty');
+                showMessage('No obol! Cannot board.', 1200);
+                soul.decayRate *= 1.5;
+                setTimeout(() => soul.element.classList.remove('rejected'), 400);
+            }
+        }
+
+        function rejectSoul(soul) {
+            soul.element.classList.remove('targetable');
+            
+            if (!soul.hasObol) {
+                // Correct rejection - satisfying banish!
+                soul.element.classList.add('rightfully-banished');
+                flashScreen('reject');
+                showMessage('Begone, penniless shade!', 1000);
+                setTimeout(() => removeSoul(soul), 700);
+            } else {
+                // Rejected a paying customer! Bad move.
+                soul.element.classList.add('wrongly-banished');
+                flashScreen('penalty');
+                showMessage('You rejected a paying soul!', 1500);
+                state.lost++;
+                setTimeout(() => removeSoul(soul), 600);
+            }
+        }
+
+        // ==================== HERACLES ====================
+        function createHeracles() {
+            if (state.heracles) return; // Only one at a time
+            
+            const shoreRect = elements.shore.getBoundingClientRect();
+            const margin = 80;
+            
+            // Spawn at a random edge, away from Charon
+            let x, y;
+            const edge = Math.floor(Math.random() * 4);
+            switch(edge) {
+                case 0: x = margin; y = margin + Math.random() * (shoreRect.height - margin * 2); break;
+                case 1: x = shoreRect.width - margin; y = margin + Math.random() * (shoreRect.height - margin * 2); break;
+                case 2: x = margin + Math.random() * (shoreRect.width - margin * 2); y = margin; break;
+                case 3: x = margin + Math.random() * (shoreRect.width - margin * 2); y = shoreRect.height - margin - 50; break;
+            }
+            
+            state.heracles = {
+                x: x,
+                y: y,
+                forceProgress: 0,
+                rejectCooldown: 0,
+                element: null
+            };
+
+            const el = document.createElement('div');
+            el.className = 'heracles';
+            el.innerHTML = `
+                <div class="heracles-figure">
+                    <div class="heracles-pelt">
+                        <div class="heracles-lion-eyes">
+                            <div class="heracles-lion-eye"></div>
+                            <div class="heracles-lion-eye"></div>
+                        </div>
+                    </div>
+                    <div class="heracles-head">
+                        <div class="heracles-eyes">
+                            <div class="heracles-eye"></div>
+                            <div class="heracles-eye"></div>
+                        </div>
+                    </div>
+                    <div class="heracles-body"></div>
+                    <div class="heracles-arms">
+                        <div class="heracles-arm left"></div>
+                        <div class="heracles-arm right"></div>
+                    </div>
+                    <div class="heracles-club"></div>
+                </div>
+                <div class="heracles-warning">⚠️</div>
+                <div class="heracles-force-bar">
+                    <div class="heracles-force-fill"></div>
+                </div>
+            `;
+            
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            
+            elements.shore.appendChild(el);
+            state.heracles.element = el;
+            
+            showMessage('Heracles approaches! Keep your distance!', 2500);
+        }
+
+        function updateHeracles(deltaTime) {
+            if (!state.heracles || state.phase !== 'shore') return;
+            
+            const h = state.heracles;
+            const shoreRect = elements.shore.getBoundingClientRect();
+            const margin = 40;
+            
+            // Handle reject cooldown
+            if (h.rejectCooldown > 0) {
+                h.rejectCooldown -= deltaTime;
+                h.element.style.opacity = 0.5;
+            } else {
+                h.element.style.opacity = 1;
+                
+                // Move toward Charon
+                const dx = state.charon.x - h.x;
+                const dy = state.charon.y - h.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > CONFIG.heraclesForceDistance) {
+                    // Chase Charon
+                    const speed = CONFIG.heraclesSpeed;
+                    h.x += (dx / dist) * speed;
+                    h.y += (dy / dist) * speed;
+                    
+                    // Keep in bounds
+                    h.x = Math.max(margin, Math.min(shoreRect.width - margin, h.x));
+                    h.y = Math.max(margin, Math.min(shoreRect.height - margin - 50, h.y));
+                    
+                    h.element.style.left = h.x + 'px';
+                    h.element.style.top = h.y + 'px';
+                    
+                    // Reset force progress when far
+                    h.forceProgress = Math.max(0, h.forceProgress - deltaTime * 0.5);
+                    h.element.classList.remove('charging');
+                } else {
+                    // Close enough - start forcing
+                    h.forceProgress += deltaTime;
+                    h.element.classList.add('charging');
+                    
+                    // Check if force complete
+                    if (h.forceProgress >= CONFIG.heraclesForceTime) {
+                        heraclesBoardsBoat();
+                        return;
+                    }
+                }
+                
+                // Update force bar
+                const forceFill = h.element.querySelector('.heracles-force-fill');
+                if (forceFill) {
+                    forceFill.style.width = (h.forceProgress / CONFIG.heraclesForceTime * 100) + '%';
+                }
+            }
+            
+            // Check if Heracles is nearest target
+            const dist = Math.sqrt(
+                Math.pow(state.charon.x - h.x, 2) + 
+                Math.pow(state.charon.y - h.y, 2)
+            );
+            
+            if (dist < CONFIG.interactionRadius && h.rejectCooldown <= 0) {
+                // Heracles becomes the target instead of souls
+                if (state.nearestSoul && state.nearestSoul.element) {
+                    state.nearestSoul.element.classList.remove('targetable');
+                }
+                h.element.classList.add('targetable');
+                state.nearestSoul = null; // Clear soul target
+                state.heraclesTargeted = true;
+            } else {
+                h.element.classList.remove('targetable');
+                state.heraclesTargeted = false;
+            }
+        }
+
+        function rejectHeracles() {
+            if (!state.heracles || state.heracles.rejectCooldown > 0) return;
+            
+            const h = state.heracles;
+            h.element.classList.add('rejected');
+            h.rejectCooldown = CONFIG.heraclesRejectCooldown;
+            h.forceProgress = 0;
+            
+            // Push him back
+            const dx = h.x - state.charon.x;
+            const dy = h.y - state.charon.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist > 0) {
+                const pushDist = 150;
+                h.x += (dx / dist) * pushDist;
+                h.y += (dy / dist) * pushDist;
+                
+                const shoreRect = elements.shore.getBoundingClientRect();
+                h.x = Math.max(40, Math.min(shoreRect.width - 40, h.x));
+                h.y = Math.max(40, Math.min(shoreRect.height - 90, h.y));
+                
+                h.element.style.left = h.x + 'px';
+                h.element.style.top = h.y + 'px';
+            }
+            
+            h.element.classList.remove('targetable');
+            flashScreen('bonus');
+            showMessage('Back, son of Zeus!', 1500);
+            
+            setTimeout(() => {
+                if (h.element) h.element.classList.remove('rejected');
+            }, 600);
+        }
+
+        function heraclesBoardsBoat() {
+            if (!state.heracles) return;
+            
+            const h = state.heracles;
+            h.element.classList.add('boarding');
+            
+            flashScreen('penalty');
+            showMessage('Heracles forces his way aboard!', 2000);
+            
+            // He takes up 3 slots
+            state.boatSouls = Math.min(CONFIG.boatCapacity, state.boatSouls + 3);
+            state.heraclesOnBoard = true;
+            updateBoatDisplay();
+            
+            setTimeout(() => {
+                removeHeracles();
+            }, 800);
+        }
+
+        function removeHeracles() {
+            if (state.heracles && state.heracles.element) {
+                state.heracles.element.remove();
+            }
+            state.heracles = null;
+            state.heraclesTargeted = false;
+        }
+
+        // ==================== AENEAS ====================
+        function createAeneas() {
+            if (state.aeneas) return; // Only one at a time
+            
+            const shoreRect = elements.shore.getBoundingClientRect();
+            const margin = 60;
+            
+            // Spawn at random position
+            const x = margin + Math.random() * (shoreRect.width - margin * 2);
+            const y = margin + Math.random() * (shoreRect.height - margin * 2 - 50);
+            
+            // Random movement direction
+            const angle = Math.random() * Math.PI * 2;
+            
+            state.aeneas = {
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * CONFIG.aeneasSpeed,
+                vy: Math.sin(angle) * CONFIG.aeneasSpeed,
+                decay: 100,
+                element: null
+            };
+
+            const el = document.createElement('div');
+            el.className = 'aeneas';
+            el.innerHTML = `
+                <div class="aeneas-figure">
+                    <div class="golden-bough"></div>
+                    <div class="aeneas-helmet">
+                        <div class="aeneas-helmet-guards">
+                            <div class="aeneas-helmet-guard left"></div>
+                            <div class="aeneas-helmet-guard right"></div>
+                        </div>
+                    </div>
+                    <div class="aeneas-head">
+                        <div class="aeneas-eyes">
+                            <div class="aeneas-eye"></div>
+                            <div class="aeneas-eye"></div>
+                        </div>
+                    </div>
+                    <div class="aeneas-body"></div>
+                    <div class="aeneas-shield"></div>
+                </div>
+                <div class="aeneas-obol">●</div>
+                <div class="aeneas-decay">
+                    <div class="aeneas-decay-fill" style="width: 100%"></div>
+                </div>
+                <div class="aeneas-label">Aeneas</div>
+            `;
+            
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            
+            elements.shore.appendChild(el);
+            state.aeneas.element = el;
+            
+            showMessage('Aeneas appears! Bearer of the Golden Bough!', 2500);
+        }
+
+        function updateAeneas(deltaTime) {
+            if (!state.aeneas || state.phase !== 'shore') return;
+            
+            const a = state.aeneas;
+            const shoreRect = elements.shore.getBoundingClientRect();
+            const margin = 50;
+            
+            // Movement - gentle floating
+            a.x += a.vx;
+            a.y += a.vy;
+            
+            // Bounce off walls
+            if (a.x < margin || a.x > shoreRect.width - margin) {
+                a.vx *= -1;
+                a.x = Math.max(margin, Math.min(shoreRect.width - margin, a.x));
+            }
+            if (a.y < margin || a.y > shoreRect.height - margin - 50) {
+                a.vy *= -1;
+                a.y = Math.max(margin, Math.min(shoreRect.height - margin - 50, a.y));
+            }
+            
+            // Occasional direction change
+            if (Math.random() < 0.008) {
+                const angle = Math.random() * Math.PI * 2;
+                a.vx = Math.cos(angle) * CONFIG.aeneasSpeed;
+                a.vy = Math.sin(angle) * CONFIG.aeneasSpeed;
+            }
+            
+            a.element.style.left = a.x + 'px';
+            a.element.style.top = a.y + 'px';
+            
+            // Decay - Aeneas won't wait forever
+            a.decay -= CONFIG.aeneasDecayRate * deltaTime / 100;
+            
+            const decayFill = a.element.querySelector('.aeneas-decay-fill');
+            if (decayFill) {
+                decayFill.style.width = Math.max(0, a.decay) + '%';
+            }
+            
+            // Fading visual
+            if (a.decay < 30) {
+                a.element.style.opacity = 0.4 + (a.decay / 30) * 0.6;
+            }
+            
+            // Check if decayed
+            if (a.decay <= 0) {
+                showMessage('Aeneas has departed...', 1500);
+                flashScreen('penalty');
+                removeAeneas();
+                return;
+            }
+            
+            // Check if targeted
+            const dx = state.charon.x - a.x;
+            const dy = state.charon.y - a.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < CONFIG.interactionRadius) {
+                // Aeneas takes priority targeting
+                if (state.nearestSoul && state.nearestSoul.element) {
+                    state.nearestSoul.element.classList.remove('targetable');
+                }
+                if (state.heracles) {
+                    state.heracles.element.classList.remove('targetable');
+                    state.heraclesTargeted = false;
+                }
+                a.element.classList.add('targetable');
+                state.aeneasTargeted = true;
+                state.nearestSoul = null;
+            } else {
+                a.element.classList.remove('targetable');
+                state.aeneasTargeted = false;
+            }
+        }
+
+        function boardAeneas() {
+            if (!state.aeneas) return;
+            
+            if (state.boatSouls >= CONFIG.boatCapacity) {
+                showMessage('Boat is full!', 1500);
+                return;
+            }
+            
+            const a = state.aeneas;
+            a.element.classList.add('boarding');
+            
+            flashScreen('bonus');
+            
+            // Aeneas counts as 2 souls and grants time bonus
+            state.boatSouls = Math.min(CONFIG.boatCapacity, state.boatSouls + CONFIG.aeneasSoulBonus);
+            state.timeRemaining += CONFIG.aeneasTimeBonus;
+            
+            // Aeneas is now on board with the Golden Bough!
+            state.aeneasOnBoard = true;
+            state.goldenBoughCharges = 3; // Can deflect 3 obstacles
+            
+            updateBoatDisplay();
+            elements.timer.textContent = state.timeRemaining;
+            elements.timer.classList.remove('warning');
+            
+            showMessage(`Aeneas boards! +${CONFIG.aeneasTimeBonus}s, Golden Bough protects!`, 2500);
+            
+            setTimeout(() => {
+                removeAeneas();
+            }, 800);
+        }
+
+        function removeAeneas() {
+            if (state.aeneas && state.aeneas.element) {
+                state.aeneas.element.remove();
+            }
+            state.aeneas = null;
+            state.aeneasTargeted = false;
+        }
+
+        function rejectAeneas() {
+            if (!state.aeneas) return;
+            
+            const a = state.aeneas;
+            a.element.classList.add('rejected');
+            
+            flashScreen('penalty');
+            showMessage('You rejected Aeneas! The Golden Bough is lost...', 2500);
+            
+            setTimeout(() => {
+                removeAeneas();
+            }, 800);
+        }
+
+        function updateCharon() {
+            if (state.phase !== 'shore') return;
+            
+            const shoreRect = elements.shore.getBoundingClientRect();
+            const margin = 30;
+            let dx = 0, dy = 0;
+
+            if (state.keys['KeyW'] || state.keys['ArrowUp']) dy -= CONFIG.charonSpeed;
+            if (state.keys['KeyS'] || state.keys['ArrowDown']) dy += CONFIG.charonSpeed;
+            if (state.keys['KeyA'] || state.keys['ArrowLeft']) dx -= CONFIG.charonSpeed;
+            if (state.keys['KeyD'] || state.keys['ArrowRight']) dx += CONFIG.charonSpeed;
+
+            if (dx !== 0 && dy !== 0) {
+                dx *= 0.707;
+                dy *= 0.707;
+            }
+
+            state.charon.x = Math.max(margin, Math.min(shoreRect.width - margin, state.charon.x + dx));
+            state.charon.y = Math.max(margin, Math.min(shoreRect.height - margin - 40, state.charon.y + dy));
+
+            elements.charon.style.left = state.charon.x + 'px';
+            elements.charon.style.top = state.charon.y + 'px';
+
+            if (dx < 0) elements.charon.classList.add('facing-left');
+            else if (dx > 0) elements.charon.classList.remove('facing-left');
+        }
+
+        function updateSouls(deltaTime) {
+            if (state.phase !== 'shore') return;
+            
+            const shoreRect = elements.shore.getBoundingClientRect();
+            const margin = 40;
+
+            state.souls.forEach(soul => {
+                if (soul.element.classList.contains('boarding') || 
+                    soul.element.classList.contains('faded') ||
+                    soul.element.classList.contains('banished')) return;
+
+                soul.x += soul.vx;
+                soul.y += soul.vy;
+
+                if (soul.x < margin || soul.x > shoreRect.width - margin) {
+                    soul.vx *= -1;
+                    soul.x = Math.max(margin, Math.min(shoreRect.width - margin, soul.x));
+                }
+                if (soul.y < margin || soul.y > shoreRect.height - margin - 20) {
+                    soul.vy *= -1;
+                    soul.y = Math.max(margin, Math.min(shoreRect.height - margin - 20, soul.y));
+                }
+
+                if (Math.random() < 0.01) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.sqrt(soul.vx * soul.vx + soul.vy * soul.vy);
+                    soul.vx = Math.cos(angle) * speed;
+                    soul.vy = Math.sin(angle) * speed;
+                }
+
+                updateSoulPosition(soul);
+
+                soul.decay -= soul.decayRate * deltaTime / 100;
+                const decayFill = soul.element.querySelector('.decay-fill');
+                if (decayFill) decayFill.style.width = Math.max(0, soul.decay) + '%';
+                soul.element.style.opacity = 0.4 + (soul.decay / 100) * 0.6;
+                
+                if (soul.decay <= 30) soul.element.classList.add('decaying');
+
+                const dist = getDistance(soul);
+                if (dist < CONFIG.revealRadius) {
+                    if (!soul.revealed) {
+                        soul.revealed = true;
+                        soul.element.classList.add('revealed');
+                    }
+                } else if (soul.revealed) {
+                    soul.revealed = false;
+                    soul.element.classList.remove('revealed');
+                }
+
+                if (soul.decay <= 0 && !soul.element.classList.contains('faded')) {
+                    soul.element.classList.add('faded');
+                    state.lost++;
+                    flashScreen('penalty');
+                    setTimeout(() => removeSoul(soul), 500);
+                }
+            });
+
+            const nearest = findNearestSoul();
+            if (nearest !== state.nearestSoul) {
+                if (state.nearestSoul && state.nearestSoul.element) {
+                    state.nearestSoul.element.classList.remove('targetable');
+                }
+                if (nearest && nearest.element) {
+                    nearest.element.classList.add('targetable');
+                }
+                state.nearestSoul = nearest;
+                elements.charon.classList.toggle('near-soul', nearest !== null);
+            }
+        }
+
+        // ==================== RIVER PHASE ====================
+        function startRiverCrossing() {
+            if (state.boatSouls === 0) {
+                showMessage('Board souls first!', 1500);
+                return;
+            }
+
+            state.phase = 'river';
+            state.riverSouls = state.boatSouls;
+            state.boatSouls = 0;
+            state.riverProgress = 0;
+            state.riverInvincible = 0;
+            state.obstacles = [];
+            state.obstacleSpawnTimer = 0;
+
+            // Setup river boat position
+            const containerRect = elements.riverPhase.getBoundingClientRect();
+            CONFIG.riverWidth = containerRect.width - CONFIG.bankWidth * 2;
+            state.riverBoat.x = containerRect.width / 2;
+            state.riverBoat.y = containerRect.height - 150;
+
+            elements.riverBoat.style.left = state.riverBoat.x + 'px';
+            elements.riverBoat.style.bottom = '50px';
+
+            // Apply Heracles effect if he's aboard
+            if (state.heraclesOnBoard) {
+                elements.riverBoat.classList.add('heracles-aboard');
+            } else {
+                elements.riverBoat.classList.remove('heracles-aboard');
+            }
+
+            // Apply Aeneas effect if he's aboard
+            if (state.aeneasOnBoard) {
+                elements.riverBoatAeneas.style.display = 'block';
+                elements.goldenBoughDisplay.classList.add('active');
+                updateGoldenBoughDisplay();
+                showMessage('The Golden Bough lights the way!', 2000);
+            } else {
+                elements.riverBoatAeneas.style.display = 'none';
+                elements.goldenBoughDisplay.classList.remove('active');
+                if (state.heraclesOnBoard) {
+                    showMessage('Heracles rocks the boat!', 2000);
+                } else {
+                    showMessage('Navigate the Styx!', 1500);
+                }
+            }
+
+            // Update displays
+            updateRiverBoatSouls();
+            elements.riverSoulsNum.textContent = state.riverSouls;
+            elements.riverProgressFill.style.width = '0%';
+
+            // Switch phases
+            elements.shorePhase.classList.add('hidden');
+            elements.riverPhase.classList.add('active');
+            elements.phaseIndicator.textContent = '🌊 RIVER';
+
+            updateBoatDisplay();
+        }
+
+        function updateRiverBoatSouls() {
+            elements.riverBoatSouls.innerHTML = '';
+            for (let i = 0; i < state.riverSouls; i++) {
+                const soul = document.createElement('div');
+                soul.className = 'river-soul';
+                elements.riverBoatSouls.appendChild(soul);
+            }
+        }
+
+        function updateGoldenBoughDisplay() {
+            const charges = elements.goldenBoughDisplay.querySelectorAll('.charge');
+            charges.forEach((charge, i) => {
+                if (i < state.goldenBoughCharges) {
+                    charge.classList.remove('used');
+                } else {
+                    charge.classList.add('used');
+                }
+            });
+        }
+
+        function createObstacle() {
+            const containerRect = elements.riverPhase.getBoundingClientRect();
+            const types = ['rock', 'rock', 'hands', 'hands', 'whirlpool'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            const obstacle = {
+                id: Date.now() + Math.random(),
+                type: type,
+                x: CONFIG.bankWidth + 50 + Math.random() * (CONFIG.riverWidth - 100),
+                y: -100,
+                width: type === 'whirlpool' ? 80 : (type === 'rock' ? 60 : 50),
+                height: type === 'whirlpool' ? 80 : (type === 'rock' ? 50 : 60),
+                baseSpeed: CONFIG.obstacleBaseSpeed + state.shift * 0.2 + Math.random() * 0.5,
+                speed: 0, // Will be calculated based on progress
+                element: null
+            };
+
+            // Whirlpool pull effect - stronger as crossing progresses
+            if (type === 'whirlpool') {
+                obstacle.basePullStrength = 0.4 + state.shift * 0.1;
+            }
+
+            const el = document.createElement('div');
+            el.className = `obstacle ${type}`;
+            el.style.left = obstacle.x + 'px';
+            el.style.top = obstacle.y + 'px';
+            
+            elements.riverPhase.appendChild(el);
+            obstacle.element = el;
+            state.obstacles.push(obstacle);
+        }
+
+        function updateRiverBoat() {
+            if (state.phase !== 'river') return;
+
+            const containerRect = elements.riverPhase.getBoundingClientRect();
+            
+            // Heracles slows the boat significantly
+            const heraclesSlowdown = state.heraclesOnBoard ? 0.5 : 1.0;
+            let dx = 0;
+
+            if (state.keys['KeyA'] || state.keys['ArrowLeft']) dx -= CONFIG.riverBoatSpeed * 1.5 * heraclesSlowdown;
+            if (state.keys['KeyD'] || state.keys['ArrowRight']) dx += CONFIG.riverBoatSpeed * 1.5 * heraclesSlowdown;
+
+            // Apply whirlpool pull - gets stronger as crossing progresses
+            // Heracles makes the boat heavier, so whirlpools pull harder
+            const pullMultiplier = (1 + (state.riverProgress / 100) * 2) * (state.heraclesOnBoard ? 1.5 : 1.0);
+            state.obstacles.forEach(obs => {
+                if (obs.type === 'whirlpool' && obs.element) {
+                    const obsCenterX = obs.x + obs.width / 2;
+                    const obsCenterY = obs.y + obs.height / 2;
+                    const boatCenterY = containerRect.height - 110;
+                    
+                    const distX = obsCenterX - state.riverBoat.x;
+                    const distY = obsCenterY - boatCenterY;
+                    const dist = Math.sqrt(distX * distX + distY * distY);
+                    
+                    if (dist < 180) {
+                        const pull = obs.basePullStrength * pullMultiplier * (1 - dist / 180);
+                        dx += (distX / dist) * pull;
+                    }
+                }
+            });
+
+            const minX = CONFIG.bankWidth + 50;
+            const maxX = containerRect.width - CONFIG.bankWidth - 50;
+            state.riverBoat.x = Math.max(minX, Math.min(maxX, state.riverBoat.x + dx));
+            elements.riverBoat.style.left = state.riverBoat.x + 'px';
+        }
+
+        function updateObstacles(deltaTime) {
+            if (state.phase !== 'river') return;
+
+            const containerRect = elements.riverPhase.getBoundingClientRect();
+
+            // Decrement invincibility timer
+            if (state.riverInvincible > 0) {
+                state.riverInvincible -= deltaTime;
+            }
+
+            // Spawn obstacles - faster spawning as crossing progresses
+            state.obstacleSpawnTimer += deltaTime;
+            const progressFactor = 1 + (state.riverProgress / 100) * 1.5; // Spawn rate increases
+            const baseSpawnInterval = Math.max(400, (1400 - state.shift * 100) / progressFactor);
+            const spawnMultiplier = state.obstacleSpawnMultiplier || 1.0;
+            const spawnInterval = baseSpawnInterval / spawnMultiplier; // Lower multiplier = longer intervals = fewer obstacles
+            if (state.obstacleSpawnTimer > spawnInterval) {
+                state.obstacleSpawnTimer = 0;
+                if (state.obstacles.length < 10 + state.shift * 2) {
+                    createObstacle();
+                }
+            }
+
+            // Calculate speed multiplier based on progress (1x to 3x)
+            const speedMultiplier = 1 + (state.riverProgress / 100) * (CONFIG.obstacleMaxSpeedMultiplier - 1);
+
+            // Update obstacles
+            state.obstacles.forEach(obs => {
+                // Speed increases as you get further into the crossing
+                obs.speed = obs.baseSpeed * speedMultiplier;
+                obs.y += obs.speed;
+                if (obs.element) {
+                    obs.element.style.top = obs.y + 'px';
+                }
+
+                // Collision detection
+                const boatHalfWidth = 24;
+                const boatCenterX = state.riverBoat.x;
+                const boatCenterY = containerRect.height - 115;
+                const boatHalfHeight = 24;
+
+                const obsCenterX = obs.x + obs.width / 2;
+                const obsCenterY = obs.y + obs.height / 2;
+                
+                let collision = false;
+                
+                if (obs.type === 'whirlpool') {
+                    // Circular collision for whirlpools
+                    const dx = boatCenterX - obsCenterX;
+                    const dy = boatCenterY - obsCenterY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const collisionRadius = 30;
+                    collision = distance < (collisionRadius + boatHalfWidth);
+                } else if (obs.type === 'rock') {
+                    const rockHalfW = 22;
+                    const rockHalfH = 18;
+                    collision = Math.abs(boatCenterX - obsCenterX) < (boatHalfWidth + rockHalfW) &&
+                                Math.abs(boatCenterY - obsCenterY) < (boatHalfHeight + rockHalfH);
+                } else if (obs.type === 'hands') {
+                    const handsHalfW = 16;
+                    const handsHalfH = 22;
+                    collision = Math.abs(boatCenterX - obsCenterX) < (boatHalfWidth + handsHalfW) &&
+                                Math.abs(boatCenterY - obsCenterY) < (boatHalfHeight + handsHalfH);
+                }
+
+                if (collision && state.riverInvincible <= 0) {
+                    // Golden Bough deflection - Aeneas protects the boat!
+                    if (state.aeneasOnBoard && state.goldenBoughCharges > 0) {
+                        state.goldenBoughCharges--;
+                        updateGoldenBoughDisplay();
+                        
+                        // Deflect the obstacle
+                        if (obs.element) {
+                            obs.element.classList.add('deflected');
+                            setTimeout(() => obs.element && obs.element.remove(), 300);
+                        }
+                        obs.y = containerRect.height + 100;
+                        
+                        flashScreen('bonus');
+                        showMessage('The Golden Bough deflects!', 800);
+                        return; // Skip damage
+                    }
+                    
+                    // Collision damage
+                    if (state.riverSouls > 0) {
+                        state.riverSouls--;
+                        state.lost++;
+                        state.riverInvincible = 1000;
+                        updateRiverBoatSouls();
+                        elements.riverSoulsNum.textContent = state.riverSouls;
+                        flashScreen('penalty');
+                        showMessage('Soul lost to the depths!', 1000);
+                        elements.riverBoat.style.animation = 'boatFlash 0.15s ease-in-out 6';
+                        setTimeout(() => {
+                            elements.riverBoat.style.animation = '';
+                        }, 1000);
+                    }
+                    // Remove obstacle after collision
+                    if (obs.element) obs.element.remove();
+                    obs.y = containerRect.height + 100;
+                }
+            });
+
+            // Remove off-screen obstacles
+            state.obstacles = state.obstacles.filter(obs => {
+                if (obs.y > containerRect.height + 50) {
+                    if (obs.element) obs.element.remove();
+                    return false;
+                }
+                return true;
+            });
+
+            // Progress - slower crossing for more challenge, even slower with Heracles
+            const heraclesProgressPenalty = state.heraclesOnBoard ? 0.6 : 1.0;
+            state.riverProgress += deltaTime * CONFIG.riverCrossingTime * (1 + state.shift * 0.05) * heraclesProgressPenalty;
+            elements.riverProgressFill.style.width = Math.min(100, state.riverProgress) + '%';
+
+            // Reached the other side
+            if (state.riverProgress >= 100) {
+                completeRiverCrossing();
+            }
+        }
+
+        function completeRiverCrossing() {
+            // Deliver souls (Heracles doesn't count toward quota)
+            const actualSoulsDelivered = state.heraclesOnBoard ? 
+                Math.max(0, state.riverSouls - 3) : state.riverSouls;
+            
+            state.delivered += actualSoulsDelivered;
+            state.totalDelivered += actualSoulsDelivered;
+            
+            const delivered = actualSoulsDelivered;
+            state.riverSouls = 0;
+
+            // Clear obstacles
+            state.obstacles.forEach(obs => {
+                if (obs.element) obs.element.remove();
+            });
+            state.obstacles = [];
+
+            // Reset Heracles state
+            if (state.heraclesOnBoard) {
+                showMessage('Heracles departs... for now.', 1500);
+            }
+            state.heraclesOnBoard = false;
+            elements.riverBoat.classList.remove('heracles-aboard');
+
+            // Reset Aeneas state
+            state.aeneasOnBoard = false;
+            state.goldenBoughCharges = 0;
+            elements.riverBoatAeneas.style.display = 'none';
+            elements.goldenBoughDisplay.classList.remove('active');
+
+            // Switch back to shore
+            state.phase = 'shore';
+            elements.riverPhase.classList.remove('active');
+            elements.shorePhase.classList.remove('hidden');
+            elements.phaseIndicator.textContent = '⚓ SHORE';
+
+            updateQuotaDisplay();
+            elements.totalDelivered.textContent = state.totalDelivered;
+
+            if (delivered > 0) {
+                flashScreen('bonus');
+                showMessage(`${delivered} souls delivered!`, 1800);
+            } else {
+                showMessage('All souls lost...', 1800);
+            }
+        }
+
+        // ==================== HEPHAESTUS FORGE ====================
+        function showForge(bonusSouls) {
+            state.forgeCoins += bonusSouls;
+            
+            elements.forgeShiftNum.textContent = toRoman(state.shift);
+            elements.forgeQuotaMet.textContent = state.quota;
+            elements.forgeBonusSouls.textContent = bonusSouls;
+            elements.forgeCoins.textContent = state.forgeCoins;
+            elements.forgeNextShift.textContent = toRoman(state.shift + 1);
+            
+            renderForgeItems();
+            elements.forgeScreen.classList.add('visible');
+        }
+
+        function renderForgeItems() {
+            elements.forgeItems.innerHTML = '';
+            
+            POWERUPS.forEach(powerup => {
+                const isPurchased = state.purchasedPowerups.includes(powerup.id) && !powerup.consumable;
+                const canAfford = state.forgeCoins >= powerup.cost;
+                
+                const item = document.createElement('div');
+                item.className = 'forge-item';
+                if (isPurchased) item.classList.add('purchased');
+                else if (!canAfford) item.classList.add('cant-afford');
+                
+                item.innerHTML = `
+                    <div class="forge-item-header">
+                        <div class="forge-item-icon">${powerup.icon}</div>
+                        <div class="forge-item-name">${powerup.name}</div>
+                    </div>
+                    <div class="forge-item-desc">${powerup.desc}</div>
+                    <div class="forge-item-footer">
+                        <div class="forge-item-cost">🪙 ${powerup.cost}</div>
+                        <button class="forge-buy-btn" 
+                            data-powerup="${powerup.id}"
+                            ${isPurchased || !canAfford ? 'disabled' : ''}>
+                            ${isPurchased ? 'Owned' : 'Forge'}
+                        </button>
+                    </div>
+                `;
+                
+                elements.forgeItems.appendChild(item);
+            });
+            
+            elements.forgeItems.querySelectorAll('.forge-buy-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const powerupId = btn.dataset.powerup;
+                    purchasePowerup(powerupId);
+                });
+            });
+        }
+
+        function purchasePowerup(powerupId) {
+            const powerup = POWERUPS.find(p => p.id === powerupId);
+            if (!powerup) return;
+            if (state.forgeCoins < powerup.cost) return;
+            if (state.purchasedPowerups.includes(powerupId) && !powerup.consumable) return;
+            
+            state.forgeCoins -= powerup.cost;
+            elements.forgeCoins.textContent = state.forgeCoins;
+            
+            if (!powerup.consumable) {
+                state.purchasedPowerups.push(powerupId);
+            }
+            
+            if (!state.activePowerups[powerupId]) {
+                state.activePowerups[powerupId] = powerup.effect;
+            }
+            
+            renderForgeItems();
+            flashScreen('bonus');
+        }
+
+        function applyPowerups() {
+            CONFIG.charonSpeed = 4;
+            CONFIG.boatCapacity = 6;
+            CONFIG.baseDecayRate = 1.0;
+            CONFIG.riverBoatSpeed = 3.5;
+            CONFIG.interactionRadius = 70;
+            CONFIG.heraclesRejectCooldown = 5000;
+            state.obstacleSpawnMultiplier = 1.0;
+            
+            let timeBonus = 0;
+            
+            for (const [id, effect] of Object.entries(state.activePowerups)) {
+                if (effect.charonSpeedBonus) CONFIG.charonSpeed *= effect.charonSpeedBonus;
+                if (effect.boatCapacityBonus) CONFIG.boatCapacity += effect.boatCapacityBonus;
+                if (effect.decayRateMultiplier) CONFIG.baseDecayRate *= effect.decayRateMultiplier;
+                if (effect.timeBonus) timeBonus += effect.timeBonus;
+                if (effect.obstacleSpawnMultiplier) state.obstacleSpawnMultiplier = effect.obstacleSpawnMultiplier;
+                if (effect.riverBoatSpeedBonus) CONFIG.riverBoatSpeed *= effect.riverBoatSpeedBonus;
+                if (effect.interactionRadiusBonus) CONFIG.interactionRadius += effect.interactionRadiusBonus;
+                if (effect.heraclesStunMultiplier) CONFIG.heraclesRejectCooldown *= effect.heraclesStunMultiplier;
+            }
+            
+            POWERUPS.filter(p => p.consumable).forEach(p => {
+                delete state.activePowerups[p.id];
+            });
+            
+            return timeBonus;
+        }
+
+        function hideForge() {
+            elements.forgeScreen.classList.remove('visible');
+        }
+
+        // ==================== GAME LOOP ====================
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!state.isRunning) return;
+
+            const deltaTime = lastTime ? timestamp - lastTime : 16;
+            lastTime = timestamp;
+
+            if (state.phase === 'shore') {
+                updateCharon();
+                updateSouls(deltaTime);
+                updateHeracles(deltaTime);
+                updateAeneas(deltaTime);
+                
+                // Heracles spawning (more frequent in later shifts)
+                state.heraclesSpawnTimer += deltaTime;
+                const heraclesInterval = CONFIG.heraclesSpawnInterval - (state.shift - 1) * 5000;
+                if (!state.heracles && state.heraclesSpawnTimer > Math.max(20000, heraclesInterval)) {
+                    state.heraclesSpawnTimer = 0;
+                    createHeracles();
+                }
+                
+                // Aeneas spawning (rarer, bonus character)
+                state.aeneasSpawnTimer += deltaTime;
+                const aeneasInterval = CONFIG.aeneasSpawnInterval - (state.shift - 1) * 3000;
+                if (!state.aeneas && state.aeneasSpawnTimer > Math.max(30000, aeneasInterval)) {
+                    state.aeneasSpawnTimer = 0;
+                    // 60% chance to spawn when timer triggers
+                    if (Math.random() < 0.6) {
+                        createAeneas();
+                    }
+                }
+            } else if (state.phase === 'river') {
+                updateRiverBoat();
+                updateObstacles(deltaTime);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== TIMER & SPAWNING ====================
+        let timerInterval = null;
+        let spawnInterval = null;
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!state.isRunning || state.phase === 'river') return;
+
+                state.timeRemaining--;
+                elements.timer.textContent = state.timeRemaining;
+
+                if (state.timeRemaining <= 10) {
+                    elements.timer.classList.add('warning');
+                }
+
+                if (state.timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    endShift();
+                }
+            }, 1000);
+        }
+
+        function startSpawning() {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => createSoul(), i * 400);
+            }
+
+            spawnInterval = setInterval(() => {
+                if (state.souls.length < CONFIG.maxSouls + state.shift && state.phase === 'shore') {
+                    createSoul();
+                }
+            }, 2500 - Math.min(state.shift * 150, 1000));
+        }
+
+        // ==================== SHIFT MANAGEMENT ====================
+        function startShift() {
+            // Apply powerups at start of shift
+            const timeBonus = applyPowerups();
+            
+            state.souls.forEach(s => s.element && s.element.remove());
+            state.souls = [];
+            state.boatSouls = 0;
+            state.delivered = 0;
+            state.nearestSoul = null;
+            state.phase = 'shore';
+            state.timeRemaining = Math.max(50, CONFIG.baseTime - (state.shift - 1) * 5) + timeBonus;
+            state.quota = CONFIG.baseQuota + state.shift;
+            
+            // Reset Heracles
+            removeHeracles();
+            state.heraclesSpawnTimer = 0;
+            state.heraclesOnBoard = false;
+            
+            // Reset Aeneas
+            removeAeneas();
+            state.aeneasSpawnTimer = 0;
+            state.aeneasOnBoard = false;
+            state.goldenBoughCharges = 0;
+
+            const shoreRect = elements.shore.getBoundingClientRect();
+            state.charon.x = shoreRect.width / 2;
+            state.charon.y = shoreRect.height / 2;
+            elements.charon.style.left = state.charon.x + 'px';
+            elements.charon.style.top = state.charon.y + 'px';
+
+            elements.shorePhase.classList.remove('hidden');
+            elements.riverPhase.classList.remove('active');
+            elements.phaseIndicator.textContent = '⚓ SHORE';
+
+            elements.timer.classList.remove('warning');
+            elements.timer.textContent = state.timeRemaining;
+            elements.shiftDisplay.textContent = `SHIFT ${toRoman(state.shift)}`;
+
+            updateQuotaDisplay();
+            updateBoatDisplay();
+            initBoatDisplay();
+
+            state.isRunning = true;
+            lastTime = 0;
+
+            startTimer();
+            startSpawning();
+            requestAnimationFrame(gameLoop);
+
+            showMessage(`Shift ${toRoman(state.shift)}: Deliver ${state.quota} souls`, 2500);
+        }
+
+        function endShift() {
+            state.isRunning = false;
+            clearInterval(timerInterval);
+            clearInterval(spawnInterval);
+
+            // Auto-deliver remaining boat souls (they're lost if on water)
+            if (state.phase === 'shore' && state.boatSouls > 0) {
+                // Quick river crossing - assume they make it for simplicity, or penalize
+                state.delivered += Math.floor(state.boatSouls * 0.5); // Half make it
+                state.totalDelivered += Math.floor(state.boatSouls * 0.5);
+                state.lost += Math.ceil(state.boatSouls * 0.5);
+                state.boatSouls = 0;
+            }
+
+            if (state.delivered >= state.quota) {
+                // Calculate excess souls as coins
+                const bonusSouls = state.delivered - state.quota;
+                showMessage(`Shift ${toRoman(state.shift)} complete!`, 2000);
+                
+                // Show forge after delay
+                setTimeout(() => showForge(bonusSouls), 2500);
+            } else {
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            elements.gameoverTitle.textContent = 'Hades is Displeased';
+            elements.gameoverMessage.textContent = `You delivered ${state.delivered} of ${state.quota} required souls.`;
+            elements.finalDelivered.textContent = state.totalDelivered;
+            elements.finalLost.textContent = state.lost;
+            elements.finalShifts.textContent = Math.max(0, state.shift - 1);
+            elements.gameoverScreen.classList.add('visible');
+        }
+
+        function resetGame() {
+            state.souls.forEach(s => s.element && s.element.remove());
+            state.obstacles.forEach(o => o.element && o.element.remove());
+            state.souls = [];
+            state.obstacles = [];
+            state.boatSouls = 0;
+            state.delivered = 0;
+            state.totalDelivered = 0;
+            state.lost = 0;
+            state.shift = 1;
+            state.quota = CONFIG.baseQuota;
+            state.timeRemaining = CONFIG.baseTime;
+            state.isRunning = false;
+            state.phase = 'shore';
+            state.keys = {};
+            
+            // Reset Heracles
+            if (state.heracles && state.heracles.element) {
+                state.heracles.element.remove();
+            }
+            state.heracles = null;
+            state.heraclesTargeted = false;
+            state.heraclesOnBoard = false;
+            state.heraclesSpawnTimer = 0;
+            
+            // Reset Aeneas
+            if (state.aeneas && state.aeneas.element) {
+                state.aeneas.element.remove();
+            }
+            state.aeneas = null;
+            state.aeneasTargeted = false;
+            state.aeneasSpawnTimer = 0;
+            state.aeneasOnBoard = false;
+            state.goldenBoughCharges = 0;
+            
+            // Reset Forge
+            state.forgeCoins = 0;
+            state.purchasedPowerups = [];
+            state.activePowerups = {};
+            state.obstacleSpawnMultiplier = 1.0;
+
+            elements.totalDelivered.textContent = '0';
+            elements.shorePhase.classList.remove('hidden');
+            elements.riverPhase.classList.remove('active');
+        }
+
+        // ==================== INPUT HANDLERS ====================
+        document.addEventListener('keydown', (e) => {
+            state.keys[e.code] = true;
+            if (!state.isRunning) return;
+
+            if (state.phase === 'shore') {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    // Priority: Aeneas > Soul > (can't board Heracles)
+                    if (state.aeneasTargeted) {
+                        boardAeneas();
+                    } else if (state.heraclesTargeted) {
+                        showMessage('Push Heracles away first! (R)', 1500);
+                    } else if (state.nearestSoul) {
+                        boardSoul(state.nearestSoul);
+                    }
+                }
+                if (e.code === 'KeyR') {
+                    e.preventDefault();
+                    // Can reject anyone - but rejecting Aeneas is a mistake!
+                    if (state.aeneasTargeted) {
+                        rejectAeneas();
+                    } else if (state.heraclesTargeted) {
+                        rejectHeracles();
+                    } else if (state.nearestSoul) {
+                        rejectSoul(state.nearestSoul);
+                    }
+                }
+                if (e.code === 'KeyE') {
+                    e.preventDefault();
+                    startRiverCrossing();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            state.keys[e.code] = false;
+        });
+
+        elements.startBtn.addEventListener('click', startGame);
+        elements.startBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            startGame();
+        });
+        
+        function startGame() {
+            if (!elements.startScreen.classList.contains('visible')) return;
+            elements.startScreen.classList.remove('visible');
+            resetGame();
+            initBoatDisplay();
+            updateQuotaDisplay();
+            updateBoatDisplay();
+            setTimeout(() => startShift(), 500);
+        }
+
+        elements.restartBtn.addEventListener('click', restartGame);
+        elements.restartBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            restartGame();
+        });
+        
+        function restartGame() {
+            if (!elements.gameoverScreen.classList.contains('visible')) return;
+            elements.gameoverScreen.classList.remove('visible');
+            resetGame();
+            initBoatDisplay();
+            updateQuotaDisplay();
+            updateBoatDisplay();
+            setTimeout(() => startShift(), 500);
+        }
+
+        elements.forgeContinueBtn.addEventListener('click', continueFromForge);
+        elements.forgeContinueBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            continueFromForge();
+        });
+        
+        function continueFromForge() {
+            if (!elements.forgeScreen.classList.contains('visible')) return;
+            hideForge();
+            state.shift++;
+            initBoatDisplay();
+            setTimeout(() => startShift(), 500);
+        }
+
+        // ==================== TOUCH CONTROLS ====================
+        const joystickZone = document.getElementById('joystick-zone');
+        const joystickBase = document.getElementById('joystick-base');
+        const joystickStick = document.getElementById('joystick-stick');
+        const btnBoard = document.getElementById('btn-board');
+        const btnDeliver = document.getElementById('btn-deliver');
+        const btnReject = document.getElementById('btn-reject');
+
+        let joystickActive = false;
+        let joystickOrigin = { x: 0, y: 0 };
+        const joystickMaxDist = 35;
+
+        function handleJoystickStart(e) {
+            e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = joystickBase.getBoundingClientRect();
+            joystickOrigin.x = rect.left + rect.width / 2;
+            joystickOrigin.y = rect.top + rect.height / 2;
+            joystickActive = true;
+            handleJoystickMove(e);
+        }
+
+        function handleJoystickMove(e) {
+            if (!joystickActive) return;
+            e.preventDefault();
+            
+            const touch = e.touches ? e.touches[0] : e;
+            let dx = touch.clientX - joystickOrigin.x;
+            let dy = touch.clientY - joystickOrigin.y;
+            
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > joystickMaxDist) {
+                dx = (dx / dist) * joystickMaxDist;
+                dy = (dy / dist) * joystickMaxDist;
+            }
+            
+            joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            const threshold = 10;
+            state.keys['ArrowUp'] = dy < -threshold;
+            state.keys['ArrowDown'] = dy > threshold;
+            state.keys['ArrowLeft'] = dx < -threshold;
+            state.keys['ArrowRight'] = dx > threshold;
+        }
+
+        function handleJoystickEnd(e) {
+            e.preventDefault();
+            joystickActive = false;
+            joystickStick.style.transform = 'translate(0, 0)';
+            state.keys['ArrowUp'] = false;
+            state.keys['ArrowDown'] = false;
+            state.keys['ArrowLeft'] = false;
+            state.keys['ArrowRight'] = false;
+        }
+
+        joystickZone.addEventListener('touchstart', handleJoystickStart, { passive: false });
+        joystickZone.addEventListener('touchmove', handleJoystickMove, { passive: false });
+        joystickZone.addEventListener('touchend', handleJoystickEnd, { passive: false });
+        joystickZone.addEventListener('touchcancel', handleJoystickEnd, { passive: false });
+
+        btnBoard.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (state.isRunning && state.phase === 'shore') {
+                if (state.aeneasTargeted) {
+                    boardAeneas();
+                } else if (state.heraclesTargeted) {
+                    showMessage('Push Heracles away first!', 1500);
+                } else if (state.nearestSoul) {
+                    boardSoul(state.nearestSoul);
+                }
+            }
+        }, { passive: false });
+
+        btnDeliver.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (state.isRunning && state.phase === 'shore') {
+                startRiverCrossing();
+            }
+        }, { passive: false });
+
+        btnReject.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (state.isRunning && state.phase === 'shore') {
+                // Can reject anyone - but rejecting Aeneas is a mistake!
+                if (state.aeneasTargeted) {
+                    rejectAeneas();
+                } else if (state.heraclesTargeted) {
+                    rejectHeracles();
+                } else if (state.nearestSoul) {
+                    rejectSoul(state.nearestSoul);
+                }
+            }
+        }, { passive: false });
+
+        function updateTouchButtons() {
+            if (state.phase === 'shore') {
+                const canInteract = state.nearestSoul || state.heraclesTargeted || state.aeneasTargeted;
+                btnBoard.classList.toggle('disabled', !canInteract);
+                btnReject.classList.toggle('disabled', !canInteract);
+                btnDeliver.classList.toggle('disabled', state.boatSouls === 0);
+                btnDeliver.querySelector('span:last-child').textContent = 'Sail';
+            } else {
+                btnBoard.classList.add('disabled');
+                btnReject.classList.add('disabled');
+                btnDeliver.classList.add('disabled');
+            }
+        }
+
+        // Hook touch button updates into game loop
+        const origUpdateSouls = updateSouls;
+        updateSouls = function(dt) {
+            origUpdateSouls(dt);
+            updateTouchButtons();
+        };
+
+        const origUpdateObs = updateObstacles;
+        updateObstacles = function(dt) {
+            origUpdateObs(dt);
+            updateTouchButtons();
+        };
+
+        document.addEventListener('touchmove', (e) => {
+            if (state.isRunning) e.preventDefault();
+        }, { passive: false });
+
+        // Initialize
+        initBoatDisplay();
+        updateQuotaDisplay();
+    </script>
+</body>
+</html>
