@@ -145,16 +145,23 @@
             top: 0;
             left: 0;
             right: 0;
-            padding: 15px 30px;
+            padding: 12px 20px 15px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             z-index: 5;
-            background: linear-gradient(to bottom, rgba(10, 10, 18, 0.95) 0%, transparent 100%);
+            background: linear-gradient(to bottom, rgba(10, 10, 18, 0.97) 0%, rgba(10, 10, 18, 0.85) 70%, transparent 100%);
         }
 
         .hud-section {
             text-align: center;
+            flex: 0 0 90px;
+            padding-top: 5px;
+        }
+
+        .hud-section.hud-center {
+            flex: 1 1 auto;
+            padding-top: 0;
         }
 
         .hud-label {
@@ -168,10 +175,14 @@
 
         .hud-value {
             font-family: 'Cinzel', serif;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--gold-coin);
             text-shadow: 0 0 20px rgba(212, 168, 83, 0.5);
+        }
+
+        .hud-section.hud-center .hud-value {
+            font-size: 1.3rem;
         }
 
         .hud-value.warning {
@@ -186,15 +197,15 @@
 
         #quota-display {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             justify-content: center;
-            margin-top: 6px;
+            margin-top: 4px;
         }
 
         .quota-soul {
-            width: 14px;
-            height: 18px;
-            border: 2px solid var(--gold-dark);
+            width: 12px;
+            height: 15px;
+            border: 1px solid var(--gold-dark);
             border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
             background: transparent;
             transition: all 0.3s ease;
@@ -202,32 +213,25 @@
 
         .quota-soul.filled {
             background: var(--gold-coin);
-            box-shadow: 0 0 8px rgba(212, 168, 83, 0.6);
+            box-shadow: 0 0 6px rgba(212, 168, 83, 0.6);
         }
 
         #shift-display {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
             font-family: 'Cinzel', serif;
-            font-size: 0.9rem;
-            color: var(--gold-dark);
+            font-size: 1rem;
+            color: var(--gold-coin);
             letter-spacing: 3px;
-            z-index: 5;
+            text-shadow: 0 0 15px rgba(212, 168, 83, 0.5);
+            font-weight: 700;
         }
 
         #phase-indicator {
-            position: absolute;
-            top: 40px;
-            left: 50%;
-            transform: translateX(-50%);
             font-family: 'Cinzel', serif;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             color: var(--soul-pale);
             letter-spacing: 2px;
-            opacity: 0.7;
-            z-index: 5;
+            opacity: 0.8;
+            margin-top: 2px;
         }
 
         /* Shore Area */
@@ -260,7 +264,7 @@
         /* Boat Display (Shore Phase) */
         #boat-display {
             position: absolute;
-            top: 18%;
+            top: 115px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
@@ -2044,7 +2048,7 @@
             pointer-events: none;
         }
 
-        @media (pointer: coarse), (max-width: 1024px) {
+        @media (pointer: coarse) and (hover: none) {
             #touch-controls {
                 display: flex;
                 justify-content: space-between;
@@ -2057,7 +2061,7 @@
                 height: 52%;
             }
             #boat-display {
-                top: 20%;
+                top: 125px;
             }
         }
 
@@ -2585,19 +2589,17 @@
                     <div class="hud-label">Time</div>
                     <div class="hud-value" id="timer">60</div>
                 </div>
-                <div class="hud-section">
-                    <div class="hud-label">Quota</div>
+                <div class="hud-section hud-center">
+                    <div id="shift-display">SHIFT I</div>
+                    <div id="phase-indicator">⚓ SHORE</div>
+                    <div class="hud-label" style="margin-top: 8px;">Quota</div>
                     <div class="hud-value" id="quota-text">0 / 5</div>
-                    <div id="quota-display"></div>
                 </div>
                 <div class="hud-section">
                     <div class="hud-label">Delivered</div>
                     <div class="hud-value" id="total-delivered">0</div>
                 </div>
             </div>
-
-            <div id="shift-display">SHIFT I</div>
-            <div id="phase-indicator">⚓ SHORE</div>
 
             <div id="boat-display">
                 <div id="boat-visual">
@@ -3017,11 +3019,13 @@
         }
 
         function updateQuotaDisplay() {
-            elements.quotaDisplay.innerHTML = '';
-            for (let i = 0; i < state.quota; i++) {
-                const soul = document.createElement('div');
-                soul.className = 'quota-soul' + (i < state.delivered ? ' filled' : '');
-                elements.quotaDisplay.appendChild(soul);
+            if (elements.quotaDisplay) {
+                elements.quotaDisplay.innerHTML = '';
+                for (let i = 0; i < state.quota; i++) {
+                    const soul = document.createElement('div');
+                    soul.className = 'quota-soul' + (i < state.delivered ? ' filled' : '');
+                    elements.quotaDisplay.appendChild(soul);
+                }
             }
             elements.quotaText.textContent = `${state.delivered} / ${state.quota}`;
         }
