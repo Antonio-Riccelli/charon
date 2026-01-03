@@ -44,14 +44,14 @@
             background: var(--shore-brown);
             color: var(--soul-pale);
             min-height: 100vh;
-            min-height: 100dvh;
+            min-height: 100svh;
             overflow: hidden;
         }
 
         #game-container {
             width: 100vw;
             height: 100vh;
-            height: 100dvh;
+            height: 100svh;
             position: relative;
             overflow: hidden;
         }
@@ -251,7 +251,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 70%;
+            height: 75%;
             background: linear-gradient(to bottom, transparent 0%, var(--shore-brown) 15%);
             border-top: 3px solid var(--styx-mist);
         }
@@ -2082,7 +2082,7 @@
                 display: none;
             }
             #shore {
-                height: 70%;
+                height: 75%;
             }
             #boat-display {
                 top: 125px;
@@ -3109,14 +3109,14 @@
             if (!state.isRunning || state.phase !== 'shore') return;
             
             const shoreRect = elements.shore.getBoundingClientRect();
-            const margin = 60;
+            const margin = 30;
             const angle = Math.random() * Math.PI * 2;
             const speed = CONFIG.soulBaseSpeed + (Math.random() * CONFIG.soulSpeedVariance);
             
             const soul = {
                 id: Date.now() + Math.random(),
                 x: margin + Math.random() * (shoreRect.width - margin * 2),
-                y: margin + Math.random() * (shoreRect.height - margin * 2 - 30),
+                y: margin + Math.random() * (shoreRect.height - margin * 2),
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 hasObol: Math.random() < (CONFIG.baseObolChance - (state.shift - 1) * 0.05),
@@ -3266,16 +3266,16 @@
             if (state.heracles) return; // Only one at a time
             
             const shoreRect = elements.shore.getBoundingClientRect();
-            const margin = 80;
+            const margin = 50;
             
             // Spawn at a random edge, away from Charon
             let x, y;
             const edge = Math.floor(Math.random() * 4);
             switch(edge) {
-                case 0: x = margin; y = margin + Math.random() * (shoreRect.height - margin * 2 - 50); break;
-                case 1: x = shoreRect.width - margin; y = margin + Math.random() * (shoreRect.height - margin * 2 - 50); break;
+                case 0: x = margin; y = margin + Math.random() * (shoreRect.height - margin * 2); break;
+                case 1: x = shoreRect.width - margin; y = margin + Math.random() * (shoreRect.height - margin * 2); break;
                 case 2: x = margin + Math.random() * (shoreRect.width - margin * 2); y = margin; break;
-                case 3: x = margin + Math.random() * (shoreRect.width - margin * 2); y = shoreRect.height - margin - 60; break;
+                case 3: x = margin + Math.random() * (shoreRect.width - margin * 2); y = shoreRect.height - margin; break;
             }
             
             state.heracles = {
@@ -3329,7 +3329,7 @@
             
             const h = state.heracles;
             const shoreRect = elements.shore.getBoundingClientRect();
-            const margin = 40;
+            const margin = 30;
             
             // Handle reject cooldown
             if (h.rejectCooldown > 0) {
@@ -3351,7 +3351,7 @@
                     
                     // Keep in bounds
                     h.x = Math.max(margin, Math.min(shoreRect.width - margin, h.x));
-                    h.y = Math.max(margin, Math.min(shoreRect.height - margin - 60, h.y));
+                    h.y = Math.max(margin, Math.min(shoreRect.height - margin, h.y));
                     
                     h.element.style.left = h.x + 'px';
                     h.element.style.top = h.y + 'px';
@@ -3417,8 +3417,8 @@
                 h.y += (dy / dist) * pushDist;
                 
                 const shoreRect = elements.shore.getBoundingClientRect();
-                h.x = Math.max(40, Math.min(shoreRect.width - 40, h.x));
-                h.y = Math.max(40, Math.min(shoreRect.height - 100, h.y));
+                h.x = Math.max(30, Math.min(shoreRect.width - 30, h.x));
+                h.y = Math.max(30, Math.min(shoreRect.height - 30, h.y));
                 
                 h.element.style.left = h.x + 'px';
                 h.element.style.top = h.y + 'px';
@@ -3465,11 +3465,11 @@
             if (state.aeneas) return; // Only one at a time
             
             const shoreRect = elements.shore.getBoundingClientRect();
-            const margin = 60;
+            const margin = 30;
             
             // Spawn at random position
             const x = margin + Math.random() * (shoreRect.width - margin * 2);
-            const y = margin + Math.random() * (shoreRect.height - margin * 2 - 50);
+            const y = margin + Math.random() * (shoreRect.height - margin * 2);
             
             // Random movement direction
             const angle = Math.random() * Math.PI * 2;
@@ -3524,7 +3524,7 @@
             
             const a = state.aeneas;
             const shoreRect = elements.shore.getBoundingClientRect();
-            const margin = 50;
+            const margin = 30;
             
             // Movement - gentle floating
             a.x += a.vx;
@@ -3535,9 +3535,9 @@
                 a.vx *= -1;
                 a.x = Math.max(margin, Math.min(shoreRect.width - margin, a.x));
             }
-            if (a.y < margin || a.y > shoreRect.height - margin - 60) {
+            if (a.y < margin || a.y > shoreRect.height - margin) {
                 a.vy *= -1;
-                a.y = Math.max(margin, Math.min(shoreRect.height - margin - 60, a.y));
+                a.y = Math.max(margin, Math.min(shoreRect.height - margin, a.y));
             }
             
             // Occasional direction change
@@ -3652,7 +3652,7 @@
             if (state.phase !== 'shore') return;
             
             const shoreRect = elements.shore.getBoundingClientRect();
-            const margin = 30;
+            const margin = 20;
             let dx = 0, dy = 0;
 
             if (state.keys['KeyW'] || state.keys['ArrowUp']) dy -= CONFIG.charonSpeed;
@@ -3666,7 +3666,7 @@
             }
 
             state.charon.x = Math.max(margin, Math.min(shoreRect.width - margin, state.charon.x + dx));
-            state.charon.y = Math.max(margin, Math.min(shoreRect.height - margin - 50, state.charon.y + dy));
+            state.charon.y = Math.max(margin, Math.min(shoreRect.height - margin, state.charon.y + dy));
 
             elements.charon.style.left = state.charon.x + 'px';
             elements.charon.style.top = state.charon.y + 'px';
@@ -3679,7 +3679,7 @@
             if (state.phase !== 'shore') return;
             
             const shoreRect = elements.shore.getBoundingClientRect();
-            const margin = 40;
+            const margin = 30;
 
             state.souls.forEach(soul => {
                 if (soul.element.classList.contains('boarding') || 
@@ -3693,9 +3693,9 @@
                     soul.vx *= -1;
                     soul.x = Math.max(margin, Math.min(shoreRect.width - margin, soul.x));
                 }
-                if (soul.y < margin || soul.y > shoreRect.height - margin - 30) {
+                if (soul.y < margin || soul.y > shoreRect.height - margin) {
                     soul.vy *= -1;
-                    soul.y = Math.max(margin, Math.min(shoreRect.height - margin - 30, soul.y));
+                    soul.y = Math.max(margin, Math.min(shoreRect.height - margin, soul.y));
                 }
 
                 if (Math.random() < 0.01) {
