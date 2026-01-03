@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Charon - Ferryman of the Dead</title>
@@ -35,12 +35,14 @@
             background: var(--styx-deep);
             color: var(--soul-pale);
             min-height: 100vh;
+            min-height: 100dvh;
             overflow: hidden;
         }
 
         #game-container {
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             position: relative;
             overflow: hidden;
         }
@@ -53,6 +55,18 @@
                 radial-gradient(ellipse at 50% 100%, var(--styx-water) 0%, transparent 70%),
                 linear-gradient(to bottom, var(--styx-deep) 0%, var(--styx-mist) 100%);
             transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        /* Bottom boundary area */
+        #shore-phase::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent 0%, rgba(10, 10, 18, 0.95) 100%);
+            pointer-events: none;
         }
 
         #shore-phase.hidden {
@@ -237,10 +251,10 @@
         /* Shore Area */
         #shore {
             position: absolute;
-            bottom: 0;
+            bottom: 100px;
             left: 0;
             right: 0;
-            height: 65%;
+            height: calc(60% - 50px);
             background: linear-gradient(to bottom, transparent 0%, var(--shore-brown) 15%);
             border-top: 3px solid var(--styx-mist);
         }
@@ -2016,34 +2030,46 @@
         /* Controls hint */
         #controls-hint {
             position: absolute;
-            bottom: 15px;
+            bottom: 110px;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'Cinzel', serif;
-            font-size: 0.75rem;
-            color: var(--gold-dark);
-            letter-spacing: 2px;
+            font-size: 0.7rem;
+            color: var(--soul-pale);
+            letter-spacing: 1px;
             z-index: 100;
             text-align: center;
+            background: rgba(10, 10, 18, 0.7);
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid rgba(212, 168, 83, 0.3);
         }
 
         .key {
             display: inline-block;
-            padding: 3px 8px;
-            background: rgba(212, 168, 83, 0.15);
+            padding: 2px 6px;
+            background: rgba(212, 168, 83, 0.2);
             border: 1px solid var(--gold-dark);
             border-radius: 4px;
-            margin: 0 2px;
+            margin: 0 3px;
+            color: var(--gold-coin);
+        }
+
+        .separator {
+            margin: 0 8px;
+            color: var(--gold-dark);
+            opacity: 0.5;
         }
 
         /* Touch Controls */
         #touch-controls {
             display: none;
             position: fixed;
-            bottom: 0;
+            bottom: 105px;
             left: 0;
             right: 0;
             padding: 15px;
+            padding-bottom: env(safe-area-inset-bottom, 15px);
             z-index: 40;
             pointer-events: none;
         }
@@ -2053,12 +2079,14 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
+                padding-bottom: env(safe-area-inset-bottom, 15px);
             }
             #controls-hint {
                 display: none;
             }
             #shore {
-                height: 52%;
+                height: calc(50% - 50px);
+                bottom: 100px;
             }
             #boat-display {
                 top: 125px;
@@ -2275,6 +2303,44 @@
         .instruction-item p {
             font-size: 0.8rem;
             margin-bottom: 0;
+        }
+
+        .controls-info {
+            margin: 20px 0;
+            padding: 15px 25px;
+            border: 1px solid var(--styx-mist);
+            border-radius: 8px;
+            max-width: 400px;
+        }
+
+        .controls-info h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--gold-coin);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .control-item {
+            font-size: 0.75rem;
+            color: var(--soul-pale);
+        }
+
+        .control-item .key {
+            display: inline-block;
+            padding: 2px 6px;
+            background: rgba(212, 168, 83, 0.15);
+            border: 1px solid var(--gold-dark);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: var(--gold-coin);
+            margin-right: 4px;
         }
 
         .final-stats {
@@ -2626,9 +2692,12 @@
 
             <div id="controls-hint">
                 <span class="key">WASD</span> Move
+                <span class="separator">•</span>
                 <span class="key">SPACE</span> Board
+                <span class="separator">•</span>
                 <span class="key">R</span> Reject
-                <span class="key">E</span> Set Sail
+                <span class="separator">•</span>
+                <span class="key">E</span> Sail
             </div>
         </div>
 
@@ -2729,6 +2798,16 @@
                 <div class="icon">⏱️</div>
                 <h3>Meet Quota</h3>
                 <p>Deliver enough souls each shift.</p>
+            </div>
+        </div>
+
+        <div class="controls-info">
+            <h3>Controls</h3>
+            <div class="controls-grid">
+                <div class="control-item"><span class="key">WASD</span> or <span class="key">↑↓←→</span> Move</div>
+                <div class="control-item"><span class="key">SPACE</span> Board Soul</div>
+                <div class="control-item"><span class="key">R</span> Reject Soul</div>
+                <div class="control-item"><span class="key">E</span> Set Sail</div>
             </div>
         </div>
 
@@ -3035,13 +3114,14 @@
             
             const shoreRect = elements.shore.getBoundingClientRect();
             const margin = 60;
+            const bottomMargin = 100; // Extra bottom margin for spawning
             const angle = Math.random() * Math.PI * 2;
             const speed = CONFIG.soulBaseSpeed + (Math.random() * CONFIG.soulSpeedVariance);
             
             const soul = {
                 id: Date.now() + Math.random(),
                 x: margin + Math.random() * (shoreRect.width - margin * 2),
-                y: margin + Math.random() * (shoreRect.height - margin * 2),
+                y: margin + Math.random() * (shoreRect.height - margin - bottomMargin),
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 hasObol: Math.random() < (CONFIG.baseObolChance - (state.shift - 1) * 0.05),
@@ -3192,15 +3272,16 @@
             
             const shoreRect = elements.shore.getBoundingClientRect();
             const margin = 80;
+            const bottomMargin = 120; // Extra bottom margin for spawn
             
             // Spawn at a random edge, away from Charon
             let x, y;
             const edge = Math.floor(Math.random() * 4);
             switch(edge) {
-                case 0: x = margin; y = margin + Math.random() * (shoreRect.height - margin * 2); break;
-                case 1: x = shoreRect.width - margin; y = margin + Math.random() * (shoreRect.height - margin * 2); break;
+                case 0: x = margin; y = margin + Math.random() * (shoreRect.height - margin - bottomMargin); break;
+                case 1: x = shoreRect.width - margin; y = margin + Math.random() * (shoreRect.height - margin - bottomMargin); break;
                 case 2: x = margin + Math.random() * (shoreRect.width - margin * 2); y = margin; break;
-                case 3: x = margin + Math.random() * (shoreRect.width - margin * 2); y = shoreRect.height - margin - 50; break;
+                case 3: x = margin + Math.random() * (shoreRect.width - margin * 2); y = shoreRect.height - bottomMargin; break;
             }
             
             state.heracles = {
@@ -3255,6 +3336,7 @@
             const h = state.heracles;
             const shoreRect = elements.shore.getBoundingClientRect();
             const margin = 40;
+            const bottomMargin = 100; // Extra bottom margin
             
             // Handle reject cooldown
             if (h.rejectCooldown > 0) {
@@ -3276,7 +3358,7 @@
                     
                     // Keep in bounds
                     h.x = Math.max(margin, Math.min(shoreRect.width - margin, h.x));
-                    h.y = Math.max(margin, Math.min(shoreRect.height - margin - 50, h.y));
+                    h.y = Math.max(margin, Math.min(shoreRect.height - bottomMargin, h.y));
                     
                     h.element.style.left = h.x + 'px';
                     h.element.style.top = h.y + 'px';
@@ -3343,7 +3425,7 @@
                 
                 const shoreRect = elements.shore.getBoundingClientRect();
                 h.x = Math.max(40, Math.min(shoreRect.width - 40, h.x));
-                h.y = Math.max(40, Math.min(shoreRect.height - 90, h.y));
+                h.y = Math.max(40, Math.min(shoreRect.height - 120, h.y));
                 
                 h.element.style.left = h.x + 'px';
                 h.element.style.top = h.y + 'px';
@@ -3391,10 +3473,11 @@
             
             const shoreRect = elements.shore.getBoundingClientRect();
             const margin = 60;
+            const bottomMargin = 120; // Extra bottom margin for spawn
             
             // Spawn at random position
             const x = margin + Math.random() * (shoreRect.width - margin * 2);
-            const y = margin + Math.random() * (shoreRect.height - margin * 2 - 50);
+            const y = margin + Math.random() * (shoreRect.height - margin - bottomMargin);
             
             // Random movement direction
             const angle = Math.random() * Math.PI * 2;
@@ -3450,6 +3533,7 @@
             const a = state.aeneas;
             const shoreRect = elements.shore.getBoundingClientRect();
             const margin = 50;
+            const bottomMargin = 100; // Extra bottom margin
             
             // Movement - gentle floating
             a.x += a.vx;
@@ -3460,9 +3544,9 @@
                 a.vx *= -1;
                 a.x = Math.max(margin, Math.min(shoreRect.width - margin, a.x));
             }
-            if (a.y < margin || a.y > shoreRect.height - margin - 50) {
+            if (a.y < margin || a.y > shoreRect.height - bottomMargin) {
                 a.vy *= -1;
-                a.y = Math.max(margin, Math.min(shoreRect.height - margin - 50, a.y));
+                a.y = Math.max(margin, Math.min(shoreRect.height - bottomMargin, a.y));
             }
             
             // Occasional direction change
@@ -3578,6 +3662,7 @@
             
             const shoreRect = elements.shore.getBoundingClientRect();
             const margin = 30;
+            const bottomMargin = 80; // Extra bottom margin to keep player visible
             let dx = 0, dy = 0;
 
             if (state.keys['KeyW'] || state.keys['ArrowUp']) dy -= CONFIG.charonSpeed;
@@ -3591,7 +3676,7 @@
             }
 
             state.charon.x = Math.max(margin, Math.min(shoreRect.width - margin, state.charon.x + dx));
-            state.charon.y = Math.max(margin, Math.min(shoreRect.height - margin - 40, state.charon.y + dy));
+            state.charon.y = Math.max(margin, Math.min(shoreRect.height - bottomMargin, state.charon.y + dy));
 
             elements.charon.style.left = state.charon.x + 'px';
             elements.charon.style.top = state.charon.y + 'px';
@@ -3605,6 +3690,7 @@
             
             const shoreRect = elements.shore.getBoundingClientRect();
             const margin = 40;
+            const bottomMargin = 80; // Extra bottom margin to keep souls visible
 
             state.souls.forEach(soul => {
                 if (soul.element.classList.contains('boarding') || 
@@ -3618,9 +3704,9 @@
                     soul.vx *= -1;
                     soul.x = Math.max(margin, Math.min(shoreRect.width - margin, soul.x));
                 }
-                if (soul.y < margin || soul.y > shoreRect.height - margin - 20) {
+                if (soul.y < margin || soul.y > shoreRect.height - bottomMargin) {
                     soul.vy *= -1;
-                    soul.y = Math.max(margin, Math.min(shoreRect.height - margin - 20, soul.y));
+                    soul.y = Math.max(margin, Math.min(shoreRect.height - bottomMargin, soul.y));
                 }
 
                 if (Math.random() < 0.01) {
