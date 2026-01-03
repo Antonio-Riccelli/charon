@@ -2206,12 +2206,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             z-index: 700;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s ease;
             padding: 20px;
+            padding-top: 40px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .overlay-screen.visible {
@@ -2363,11 +2366,154 @@
         }
 
         @media (max-width: 600px) {
-            .overlay-screen h1 { font-size: 2rem; }
-            .instructions { grid-template-columns: 1fr 1fr; gap: 10px; }
-            .instruction-item { padding: 10px; }
-            .final-stats { gap: 20px; }
-            .stat-value { font-size: 2rem; }
+            /* Overlay screens - compact layout */
+            .overlay-screen { 
+                padding: 15px; 
+                padding-top: 20px;
+                justify-content: flex-start;
+            }
+            .overlay-screen h1 { font-size: 1.8rem; letter-spacing: 3px; margin-bottom: 5px; }
+            .overlay-screen h2 { font-size: 1.2rem; margin-bottom: 15px; }
+            .overlay-screen p { font-size: 0.85rem; max-width: 95%; margin-bottom: 8px; line-height: 1.5; }
+            .subtitle { font-size: 0.85rem; margin-bottom: 12px; }
+            
+            .instructions { 
+                grid-template-columns: 1fr 1fr; 
+                gap: 6px; 
+                max-width: 100%; 
+                margin: 12px 0;
+            }
+            .instruction-item { padding: 8px 6px; }
+            .instruction-item .icon { font-size: 1.1rem; margin-bottom: 4px; }
+            .instruction-item h3 { font-size: 0.6rem; margin-bottom: 3px; }
+            .instruction-item p { font-size: 0.65rem; line-height: 1.3; }
+            
+            .controls-info { 
+                display: none; /* Hide keyboard controls on mobile */
+            }
+            
+            .start-btn { padding: 12px 30px; font-size: 0.9rem; margin-top: 15px; }
+            
+            .final-stats { gap: 12px; flex-wrap: wrap; }
+            .stat-item { min-width: 70px; }
+            .stat-value { font-size: 1.6rem; }
+            .stat-label { font-size: 0.55rem; }
+            
+            /* River phase - much narrower banks for more play space */
+            .river-bank { width: 15px !important; }
+            .river-bank.left { border-right-width: 2px; }
+            .river-bank.right { border-left-width: 2px; }
+            #destination { left: 15px; right: 15px; height: 45px; }
+            #destination span { font-size: 0.65rem; letter-spacing: 1px; }
+            
+            /* Smaller obstacles on mobile */
+            .obstacle { transform-origin: center center; }
+            .obstacle.rock { width: 28px; height: 28px; }
+            .obstacle.hands { width: 32px; height: 40px; }
+            .obstacle.whirlpool { width: 35px; height: 35px; }
+            
+            /* River boat smaller */
+            #river-boat { transform: scale(0.8); }
+            
+            /* HUD adjustments */
+            #hud { padding: 8px 10px 10px; }
+            .hud-section { flex: 0 0 55px; }
+            .hud-value { font-size: 1.2rem; }
+            .hud-label { font-size: 0.55rem; letter-spacing: 1px; }
+            #shift-display { font-size: 0.75rem; letter-spacing: 2px; }
+            #phase-indicator { font-size: 0.5rem; }
+            .hud-section.hud-center .hud-value { font-size: 1rem; }
+            
+            /* Boat display */
+            #boat-display { top: 95px; }
+            #boat-visual { width: 110px; height: 32px; }
+            .boat-soul-icon { width: 10px; height: 12px; }
+            #boat-count { font-size: 0.6rem; }
+            
+            /* Shore phase */
+            #shore { height: 68%; }
+            
+            /* Touch controls - compact */
+            #touch-controls { bottom: 10px; padding: 10px; }
+            #joystick-zone { width: 90px; height: 90px; }
+            #joystick-base { width: 75px; height: 75px; }
+            #joystick-stick { width: 32px; height: 32px; bottom: 22px; left: 22px; }
+            .action-btn { width: 50px; height: 50px; font-size: 0.5rem; }
+            .action-btn .btn-icon { font-size: 0.9rem; }
+            #action-buttons { gap: 6px; }
+            
+            /* River HUD */
+            #river-hud { top: 8px; left: 8px; right: 8px; padding: 8px; }
+            #river-souls-count { font-size: 0.75rem; }
+            #river-progress { height: 5px; }
+            
+            /* Charon and souls smaller */
+            #charon { transform: scale(0.75); }
+            .soul { transform: scale(0.8); }
+            .heracles { transform: scale(0.75); }
+            .aeneas { transform: scale(0.75); }
+            
+            /* Forge shop - compact */
+            .forge-title { font-size: 1.3rem; margin-bottom: 3px; }
+            .forge-subtitle { font-size: 0.7rem; margin-bottom: 10px; }
+            .forge-coins { font-size: 0.95rem; margin-bottom: 10px; }
+            .forge-items { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 6px; 
+                max-width: 100%;
+                padding: 0 5px;
+            }
+            .forge-item { padding: 8px 6px; min-height: auto; }
+            .item-icon { font-size: 1.3rem; margin-bottom: 4px; }
+            .item-name { font-size: 0.65rem; margin-bottom: 2px; }
+            .item-desc { font-size: 0.55rem; margin-bottom: 6px; line-height: 1.3; }
+            .item-cost { font-size: 0.75rem; }
+            .continue-btn { padding: 10px 20px; font-size: 0.8rem; margin-top: 10px; }
+            
+            /* Message toast */
+            #message { font-size: 0.9rem; padding: 10px 20px; }
+        }
+
+        /* Extra small phones */
+        @media (max-width: 400px) {
+            .overlay-screen h1 { font-size: 1.5rem; letter-spacing: 2px; }
+            .overlay-screen h2 { font-size: 1rem; }
+            .overlay-screen p { font-size: 0.8rem; }
+            .instructions { gap: 5px; }
+            .instruction-item { padding: 6px 4px; }
+            .instruction-item .icon { font-size: 1rem; }
+            .instruction-item h3 { font-size: 0.55rem; }
+            .instruction-item p { font-size: 0.6rem; }
+            
+            .river-bank { width: 10px !important; }
+            #destination { left: 10px; right: 10px; }
+            
+            .hud-section { flex: 0 0 45px; }
+            .hud-value { font-size: 1rem; }
+            #boat-display { top: 85px; }
+            #boat-visual { width: 90px; height: 28px; }
+            
+            #charon { transform: scale(0.65); }
+            .soul { transform: scale(0.7); }
+            
+            .forge-items { gap: 5px; }
+            .forge-item { padding: 6px 4px; }
+            .item-icon { font-size: 1.1rem; }
+            .item-name { font-size: 0.6rem; }
+            .item-desc { font-size: 0.5rem; }
+        }
+        
+        /* Landscape phone mode */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .overlay-screen { padding-top: 10px; }
+            .overlay-screen h1 { font-size: 1.4rem; margin-bottom: 5px; }
+            .overlay-screen p { font-size: 0.75rem; margin-bottom: 5px; }
+            .instructions { margin: 8px 0; gap: 5px; }
+            .instruction-item { padding: 5px; }
+            .start-btn { margin-top: 10px; padding: 8px 20px; }
+            #shore { height: 60%; }
+            #hud { padding: 5px 10px; }
+            #boat-display { top: 70px; }
         }
 
         /* ========== HEPHAESTUS FORGE (SHOP) ========== */
@@ -3763,6 +3909,16 @@
 
             // Setup river boat position
             const containerRect = elements.riverPhase.getBoundingClientRect();
+            
+            // Dynamic bank width based on screen size - very narrow on phones
+            if (containerRect.width <= 400) {
+                CONFIG.bankWidth = 10;
+            } else if (containerRect.width <= 600) {
+                CONFIG.bankWidth = 15;
+            } else {
+                CONFIG.bankWidth = 80;
+            }
+            
             CONFIG.riverWidth = containerRect.width - CONFIG.bankWidth * 2;
             state.riverBoat.x = containerRect.width / 2;
             state.riverBoat.y = containerRect.height - 150;
@@ -3831,21 +3987,30 @@
             const types = ['rock', 'rock', 'hands', 'hands', 'whirlpool'];
             const type = types[Math.floor(Math.random() * types.length)];
             
+            // On mobile, use smaller obstacle sizes and spawn more towards center
+            const isMobileView = containerRect.width <= 600;
+            const sizeScale = isMobileView ? 0.6 : 1.0;
+            
+            // Calculate spawn x position - on mobile, keep away from edges
+            const spawnMargin = isMobileView ? 30 : 50;
+            const spawnWidth = CONFIG.riverWidth - (spawnMargin * 2);
+            const spawnX = CONFIG.bankWidth + spawnMargin + Math.random() * spawnWidth;
+            
             const obstacle = {
                 id: Date.now() + Math.random(),
                 type: type,
-                x: CONFIG.bankWidth + 50 + Math.random() * (CONFIG.riverWidth - 100),
+                x: spawnX,
                 y: -100,
-                width: type === 'whirlpool' ? 80 : (type === 'rock' ? 60 : 50),
-                height: type === 'whirlpool' ? 80 : (type === 'rock' ? 50 : 60),
+                width: (type === 'whirlpool' ? 80 : (type === 'rock' ? 60 : 50)) * sizeScale,
+                height: (type === 'whirlpool' ? 80 : (type === 'rock' ? 50 : 60)) * sizeScale,
                 baseSpeed: CONFIG.obstacleBaseSpeed + state.shift * 0.2 + Math.random() * 0.5,
                 speed: 0, // Will be calculated based on progress
                 element: null
             };
 
-            // Whirlpool pull effect - stronger as crossing progresses
+            // Whirlpool pull effect - stronger as crossing progresses (weaker on mobile)
             if (type === 'whirlpool') {
-                obstacle.basePullStrength = 0.4 + state.shift * 0.1;
+                obstacle.basePullStrength = (0.4 + state.shift * 0.1) * (isMobileView ? 0.5 : 1.0);
             }
 
             const el = document.createElement('div');
@@ -3865,10 +4030,15 @@
             
             // Heracles slows the boat significantly
             const heraclesSlowdown = state.heraclesOnBoard ? 0.5 : 1.0;
+            
+            // Faster boat speed on mobile for easier dodging
+            const isMobileView = containerRect.width <= 600;
+            const mobileSpeedBoost = isMobileView ? 1.4 : 1.0;
+            
             let dx = 0;
 
-            if (state.keys['KeyA'] || state.keys['ArrowLeft']) dx -= CONFIG.riverBoatSpeed * 1.5 * heraclesSlowdown;
-            if (state.keys['KeyD'] || state.keys['ArrowRight']) dx += CONFIG.riverBoatSpeed * 1.5 * heraclesSlowdown;
+            if (state.keys['KeyA'] || state.keys['ArrowLeft']) dx -= CONFIG.riverBoatSpeed * 1.5 * heraclesSlowdown * mobileSpeedBoost;
+            if (state.keys['KeyD'] || state.keys['ArrowRight']) dx += CONFIG.riverBoatSpeed * 1.5 * heraclesSlowdown * mobileSpeedBoost;
 
             // Apply whirlpool pull - gets stronger as crossing progresses
             // Heracles makes the boat heavier, so whirlpools pull harder
@@ -3890,8 +4060,10 @@
                 }
             });
 
-            const minX = CONFIG.bankWidth + 50;
-            const maxX = containerRect.width - CONFIG.bankWidth - 50;
+            // Boat boundaries - smaller margin on mobile
+            const boundaryMargin = containerRect.width <= 600 ? 25 : 50;
+            const minX = CONFIG.bankWidth + boundaryMargin;
+            const maxX = containerRect.width - CONFIG.bankWidth - boundaryMargin;
             state.riverBoat.x = Math.max(minX, Math.min(maxX, state.riverBoat.x + dx));
             elements.riverBoat.style.left = state.riverBoat.x + 'px';
         }
@@ -3907,14 +4079,19 @@
             }
 
             // Spawn obstacles - faster spawning as crossing progresses
+            // On mobile, spawn less frequently and allow fewer obstacles
+            const isMobileView = containerRect.width <= 600;
+            const mobileSpawnMultiplier = isMobileView ? 1.5 : 1.0; // Higher = slower spawn on mobile
+            const maxObstacles = isMobileView ? (6 + state.shift) : (10 + state.shift * 2);
+            
             state.obstacleSpawnTimer += deltaTime;
             const progressFactor = 1 + (state.riverProgress / 100) * 1.5; // Spawn rate increases
-            const baseSpawnInterval = Math.max(400, (1400 - state.shift * 100) / progressFactor);
+            const baseSpawnInterval = Math.max(400, (1400 - state.shift * 100) / progressFactor) * mobileSpawnMultiplier;
             const spawnMultiplier = state.obstacleSpawnMultiplier || 1.0;
             const spawnInterval = baseSpawnInterval / spawnMultiplier; // Lower multiplier = longer intervals = fewer obstacles
             if (state.obstacleSpawnTimer > spawnInterval) {
                 state.obstacleSpawnTimer = 0;
-                if (state.obstacles.length < 10 + state.shift * 2) {
+                if (state.obstacles.length < maxObstacles) {
                     createObstacle();
                 }
             }
@@ -3932,10 +4109,13 @@
                 }
 
                 // Collision detection
-                const boatHalfWidth = 24;
+                // Use smaller hitboxes on mobile devices
+                const hitboxScale = isMobileView ? 0.6 : 1.0;
+                
+                const boatHalfWidth = 24 * hitboxScale;
                 const boatCenterX = state.riverBoat.x;
                 const boatCenterY = containerRect.height - 115;
-                const boatHalfHeight = 24;
+                const boatHalfHeight = 24 * hitboxScale;
 
                 const obsCenterX = obs.x + obs.width / 2;
                 const obsCenterY = obs.y + obs.height / 2;
@@ -3947,16 +4127,16 @@
                     const dx = boatCenterX - obsCenterX;
                     const dy = boatCenterY - obsCenterY;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    const collisionRadius = 30;
+                    const collisionRadius = 30 * hitboxScale;
                     collision = distance < (collisionRadius + boatHalfWidth);
                 } else if (obs.type === 'rock') {
-                    const rockHalfW = 22;
-                    const rockHalfH = 18;
+                    const rockHalfW = 22 * hitboxScale;
+                    const rockHalfH = 18 * hitboxScale;
                     collision = Math.abs(boatCenterX - obsCenterX) < (boatHalfWidth + rockHalfW) &&
                                 Math.abs(boatCenterY - obsCenterY) < (boatHalfHeight + rockHalfH);
                 } else if (obs.type === 'hands') {
-                    const handsHalfW = 16;
-                    const handsHalfH = 22;
+                    const handsHalfW = 16 * hitboxScale;
+                    const handsHalfH = 22 * hitboxScale;
                     collision = Math.abs(boatCenterX - obsCenterX) < (boatHalfWidth + handsHalfW) &&
                                 Math.abs(boatCenterY - obsCenterY) < (boatHalfHeight + handsHalfH);
                 }
